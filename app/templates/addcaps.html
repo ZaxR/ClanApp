@@ -1,0 +1,26 @@
+<h1>Form Demo</h1>
+<fieldset>
+    <legend>Add Cap</legend>
+    <form method="post" action="{{ url_for('sample') }}">
+        <p><label>RSN:</label>
+            <select name="comp_select">
+                {% for name in names %}
+                    <option value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+        </p>
+
+        <p><label>Date:</label> <input type="text" name="date"></p>
+
+        <p>
+            <label>Cap Type:</label>
+            <select id = "cap_type">
+                <option value = "0">Yes</option>
+                <option value = "1">No</option>
+                <option value = "2">New</option>
+                <option value = "3">Vacation</option>
+            </select></p>
+
+        <p><button type="submit">Add</button></p>
+    </form>
+</fieldset>
