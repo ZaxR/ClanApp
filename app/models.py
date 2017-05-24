@@ -2,7 +2,7 @@ from app import db
 import datetime
 
 
-class User(db.Model):
+class Users(db.Model):
     __tablename__ = "users"
     id = db.Column('user_id', db.Integer, primary_key=True)
     username = db.Column('username', db.String(20), unique=True, index=True)
@@ -32,14 +32,41 @@ class User(db.Model):
         return '<User %r>' % (self.username)
 
 
-class Caps(db.Model):
-    __tablename__ = "ca[s"
+class Accounts(db.Model):
+    __tablename__ = "accounts"
     id = db.Column(db.Integer, primary_key=True)
-    capdate = db.Column(db.DateTime)
-    rsn = db.Column(db.String(14), index=True, unique=True)
+    rsn = db.Column(db.String(15), index=True, unique=False)
+
+    def __init__(self, rsn):
+        self.rsn = rsn
+        self.past_rsns = []
+        self.version = "RS3"
+        self.inClan = "Yes"
+        self.rank = None # How do I inherit this value from the Player who owns this account?
+        self.caps = {}  # its own class?; wk number: 1/5 options from rank sheet
+        self.recruits = {}  # its own class?: recruit_transaction_id: date, recruit_name, enter/leave, points?
+        self.events = {}  # its own class?: event_transaction_id: begin_date, end_date, [participants], points?
+        self.clanXp = 0  # pull live from latest db entry
+
+
+class Caps(db.Model):
+    __tablename__ = "caps"
+    id = db.Column(db.Integer, primary_key=True)
+    capdate = db.Column(db.String(15), index=True, unique=False)  # db.Column(db.DateTime)
+    week = db.Column(db.String(15), index=True, unique=False)
+    rsn = db.Column(db.String(15), index=True, unique=False)
     captype = db.Column(db.Integer, index=True, unique=False)
 
-    def __init__(self, capdate, rsn, captype):
+    def __init__(self, capdate, week, rsn, captype):
+        self.capdate = capdate
+        self.week = week
         self.rsn = rsn
         self.captype = captype
-        self.capdate = capdate
+
+    def serialize(self):
+        return {
+            'capdate': self.capdate,
+            'week': self.week,
+            'rsn': self.rsn,
+            'captype': self.captype
+        }

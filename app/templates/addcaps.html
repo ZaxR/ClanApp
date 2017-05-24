@@ -1,26 +1,78 @@
-<h1>Form Demo</h1>
-<fieldset>
-    <legend>Add Cap</legend>
-    <form method="post" action="{{ url_for('sample') }}">
-        <p><label>RSN:</label>
-            <select name="comp_select">
-                {% for name in names %}
-                    <option value="{{ name }}">{{ name }}</option>
+<!-- extend base layuot -->
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-line-chart"></i> Add Cap <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+    </div>
+    <div class="panel-body">
+        <form method="post" action="{{ url_for('addcaps') }}" id="eventForm" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-xs-3 control-label">RSN</label>
+                <div class="col-xs-5" name="RSN">
+                        {{ form.rsn(class_="form-control") }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-xs-3 control-label">Date</label>
+                <div class="col-xs-5 date">
+                    <div class="input-group input-append date" id="datePicker">
+                        {{ form.capdate(class_="form-control") }}
+                        <span class="input-group-addon add-on"><span class="glyphicon glyphicon-calendar"></span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-xs-3 control-label">Cap Type</label>
+                <div class="col-xs-5 date">
+                    <div class="input-group input-append date">
+                        {{ form.captype(class_="form-control") }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-xs-5 col-xs-offset-3">
+                    <button type="submit" class="btn btn-default">Add</button>
+                </div>
+            </div>
+        </form>
+
+    {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class = flashes>
+                {% for message in messages %}
+                    {{message}}
                 {% endfor %}
-            </select>
-        </p>
+                </ul>
+            {% endif %}
+        {% endwith %}
 
-        <p><label>Date:</label> <input type="text" name="date"></p>
+    </div>
+</div>
 
-        <p>
-            <label>Cap Type:</label>
-            <select id = "cap_type">
-                <option value = "0">Yes</option>
-                <option value = "1">No</option>
-                <option value = "2">New</option>
-                <option value = "3">Vacation</option>
-            </select></p>
+<table class="table" id="grid">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Week</th>
+            <th>RSN</th>
+            <th>Cap Type</th>
+        <tr>
+    </thead>
+    <tbody>
+        {% for row in captable %}
+        <tr>
+            <td>{{ row.capdate }}</td>
+            <td>{{ row.week }}</td>
+            <td>{{ row.rsn }}</td>
+            <td>{{ row.captype }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-        <p><button type="submit">Add</button></p>
-    </form>
-</fieldset>
+{% endblock %}
