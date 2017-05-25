@@ -1,5 +1,5 @@
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for, abort
-from flask_login import logout_user, login_required, login_manager
+from flask import flash, jsonify, redirect, render_template, request, session, url_for, abort
+from flask_login import logout_user, login_required, login_manager, login_user
 from app import app, db, models, forms
 from sqlalchemy import desc
 import json
@@ -7,28 +7,31 @@ import json
 
 @app.route('/')
 @app.route('/index')
-def home():
+def index():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     else:
-        return render_template('layout.html')
+        return render_template('index.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'GET':
-        return render_template('login.html')
-    if request.form['password'] == 'password' and request.form['username'] == 'admin':
-        session['logged_in'] = True
-    else:
-        flash('wrong password!')
-    return redirect(url_for('home'))  # Always redirects to home page after login
+    form = forms.LoginForm(request.form)
+    if request.method == 'POST' and form.validate():
+        user = models.Users.query.filter_by(username=form.username.data).first()
+        if user is not None and user.verify_password(form.password.data):
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid e-mail or password')
+    return render_template('login.html', form=form)
 
 
 @app.route('/logout')
 def logout():
     session['logged_in'] = False
-    return redirect('index')
+    flash('You have successfully been logged out.')
+    return redirect(url_for('index'))
 
 
 @app.route('/addcaps', methods=['GET', 'POST'])
@@ -36,7 +39,7 @@ def addcaps():
     form = forms.CapsForm(request.form)
 
     if not session.get('logged_in'):
-        return redirect(url_for('home'))
+        return redirect(url_for('index'))
 
     if request.method == 'POST':  # and form.validate()
         from datetime import datetime
