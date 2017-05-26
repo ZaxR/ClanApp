@@ -5,12 +5,6 @@ from wtforms.ext.sqlalchemy.fields import QuerySelectField, QuerySelectMultipleF
 from app import models
 
 
-class LoginForm(FlaskForm):
-    username = StringField('username', validators=[DataRequired()])
-    password = PasswordField('password', validators=[DataRequired()])
-    submit = SubmitField('Login')
-
-
 class CapsForm(FlaskForm):
     capdate = DateField('Cap Date', format='%m/%d/%Y')
     #week = StringField('Email Address', [validators.Length(min=0, max=35)])

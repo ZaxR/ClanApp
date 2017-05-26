@@ -4,7 +4,7 @@
 {% block body %}
 
 
-<form action="{{ url_for('login', next=next) }}" method="POST">
+<form action="{{ url_for('auth.login', next=next) }}" method="POST">
 	{{ form.csrf_token }}
 	<div class="login">
 		<div class="login-screen">
