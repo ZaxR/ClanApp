@@ -2,12 +2,9 @@
 <link href="{{ url_for('static', filename = 'css/login.css') }}" rel="stylesheet" type="text/css">
 
 {% block body %}
-{% if session['logged_in'] %}
-<p>You're logged in already!</p>
-{% else %}
 
 
-<form action="/login" method="POST">
+<form action="{{ url_for('login', next=next) }}" method="POST">
 	{{ form.csrf_token }}
 	<div class="login">
 		<div class="login-screen">
@@ -19,13 +16,7 @@
 				<div class="control-group">
 				<input type="text" class="login-field" value="" placeholder="admin" name="username">
 				<label class="login-field-icon fui-user" for="login-name"></label>
-				{% with messages = get_flashed_messages() %}
-					{% if messages %}
-						{% for message in messages %}
-							{{message}}
-						{% endfor %}
-					{% endif %}
-				{% endwith %}
+
 				</div>
 
 				<div class="control-group">
@@ -35,10 +26,19 @@
 
                 <input type="submit" value="Log in" class="btn btn-primary btn-large btn-block" >
 			    <br>
+
+				{% with messages = get_flashed_messages() %}
+					{% if messages %}
+						{% for message in messages %}
+							{{message}}
+						{% endfor %}
+					{% endif %}
+				{% endwith %}
+
 			</div>
 		</div>
 	</div>
 </form>
 
-{% endif %}
+
 {% endblock %}

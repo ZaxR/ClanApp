@@ -9,6 +9,7 @@
     <div class="panel-body">
         <form method="post" action="{{ url_for('addcaps') }}" id="eventForm" class="form-horizontal">
             <div class="form-group">
+                {{ form.csrf_token }}
                 <label class="col-xs-3 control-label">RSN</label>
                 <div class="col-xs-5" name="RSN">
                         {{ form.rsn(class_="form-control") }}

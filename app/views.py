@@ -7,41 +7,39 @@ import json
 
 @app.route('/')
 @app.route('/index')
+@login_required
 def index():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    else:
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
-def login():
+def login():  # todo known issues: 1) able to go to login form when logged in; 2) if go directly to /login, redirect breaks
     form = forms.LoginForm(request.form)
     if request.method == 'POST' and form.validate():
         user = models.Users.query.filter_by(username=form.username.data).first()
         if user is not None and user.verify_password(form.password.data):
-            session['logged_in'] = True
-            return redirect(url_for('index'))
+            login_user(user)
+            print('logged in')
+            return redirect(url_for(request.args.get('next') or 'index'))
         else:
             flash('Invalid e-mail or password')
-    return render_template('login.html', form=form)
+    return render_template('login.html', next=request.args.get('next'), form=form)
 
 
 @app.route('/logout')
+@login_required
 def logout():
-    session['logged_in'] = False
+    logout_user()
     flash('You have successfully been logged out.')
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 @app.route('/addcaps', methods=['GET', 'POST'])
+@login_required
 def addcaps():
     form = forms.CapsForm(request.form)
 
-    if not session.get('logged_in'):
-        return redirect(url_for('index'))
-
-    if request.method == 'POST':  # and form.validate()
+    if request.method == 'POST' and form.validate():
         from datetime import datetime
         new_cap = models.Caps(datetime.strftime(form.capdate.data, '%m/%d/%Y'),
                               capweek(form.capdate.data),
@@ -72,6 +70,7 @@ def capweek(somedate, clanstart='2016-5-1'):
 
 
 @app.route('/viewcaps', methods=['GET', 'POST'])
+@login_required
 def viewcaps():
     from pandas import crosstab
     import pandas as pd
