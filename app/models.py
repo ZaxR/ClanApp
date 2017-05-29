@@ -58,12 +58,14 @@ class Accounts(db.Model):
     __tablename__ = "accounts"
     id = db.Column(db.Integer, primary_key=True)
     rsn = db.Column(db.String(15), index=True, unique=False)
+    in_clan = db.Column(db.String(3), index=True, unique=False)
 
-    def __init__(self, rsn):
+    def __init__(self, rsn, in_clan):
         self.rsn = rsn
+        self.in_clan = in_clan
+
         self.past_rsns = []
         self.version = "RS3"
-        self.inClan = "Yes"
         self.rank = None  # How do I inherit this value from the Player who owns this account?
 
         self.join_date = None  # need this for xp math, time in clan, etc.
@@ -104,8 +106,6 @@ class Recruits(db.Model):
     recruiter = db.Column(db.String(15), index=True, unique=False)  # rsn from Account.rsn list or "unknown"
     recruit = db.Column(db.String(15), index=True, unique=False)
     points = db.Column(db.Integer, index=True, unique=False)
-    """Yes if no leave or date of leave > date of join + 7, otherwise No  # calc when?
-        change_to_recruit_count: reccountcalc(Type)"""
     change_to_recruit_count = db.Column(db.Integer, index=True, unique=False)  # recountcalc(Type)
 
     def __init__(self, recruit_date, activity_type, recruiter, recruit, points, change_to_recruit_count):
@@ -115,11 +115,6 @@ class Recruits(db.Model):
         self.recruit = recruit
         self.points = points
         self.change_to_recruit_count = change_to_recruit_count
-
-    def recountcalc(type):
-        if type == "join":
-            return 1
-        return 0
 
 
 class Events(db.Model):

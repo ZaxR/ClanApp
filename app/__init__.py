@@ -2,6 +2,7 @@ from flask import Flask, flash, redirect, request, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -18,6 +19,8 @@ login_manager.login_view = "login"
 
 # When True, the page the user is attempting to access is stored as next
 # USE_SESSION_FOR_NEXT = True
+
+migrate = Migrate(app, db)
 
 from app import views, models
 models.db.create_all()

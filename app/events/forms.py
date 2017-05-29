@@ -19,7 +19,7 @@ class EventsForm(FlaskForm):
         ('Recruiting', 'Recruiting'),
         ('Skilling Competition', 'Skilling Competition')
     ]
-    activity = SelectField("Activity Type Choices", choices=activity_type_choices, validators=[DataRequired()])
+    activity_type = SelectField("Activity Type Choices", choices=activity_type_choices, validators=[DataRequired()])
 
     description = StringField('description', validators=[DataRequired()])
 

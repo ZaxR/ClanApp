@@ -4,25 +4,18 @@
 
 <div class="panel panel-primary">
     <div class="panel-heading">
-        <h3 class="panel-title"><i class="fa fa-line-chart"></i> Add Cap <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+        <h3 class="panel-title"><i class="fa fa-line-chart"></i> Add Recruit <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
     </div>
     <div class="panel-body">
-        <form method="post" action="{{ url_for('events.addevents') }}" id="eventForm" class="form-horizontal">
+        <form method="post" action="{{ url_for('recruits.addrecruits') }}" id="eventForm" class="form-horizontal">
+            {{ form.csrf_token }}
             <div class="form-group">
-                {{ form.csrf_token }}
-                <label class="col-xs-3 control-label">Event Date</label>
+                <label class="col-xs-3 control-label">Date</label>
                 <div class="col-xs-5 date">
                     <div class="input-group input-append date" id="datePicker">
-                        {{ form.event_date(class_="form-control") }}
+                        {{ form.recruit_date(class_="form-control") }}
                         <span class="input-group-addon add-on"><span class="glyphicon glyphicon-calendar"></span></span>
                     </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="col-xs-3 control-label">Host RSN</label>
-                <div class="col-xs-5" name="RSN">
-                        {{ form.host(class_="form-control") }}
                 </div>
             </div>
 
@@ -30,26 +23,22 @@
                 <label class="col-xs-3 control-label">Activity Type</label>
                 <div class="col-xs-5 date">
                     <div class="input-group input-append date">
-                        {{ form.activity_type(class_="form-control") }}
+                        {{ form.activity(class_="form-control") }}
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="col-xs-3 control-label">Description</label>
-                <div class="col-xs-5 date">
-                    <div class="input-group input-append date">
-                        {{ form.description(class_="form-control") }}
-                    </div>
+                <label class="col-xs-3 control-label">Recruiter</label>
+                <div class="col-xs-5" name="RSN">
+                        {{ form.recruiter(class_="form-control") }}
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="col-xs-3 control-label">Attendee Count</label>
-                <div class="col-xs-5 date">
-                    <div class="input-group input-append date">
-                        {{ form.attendee_count(class_="form-control") }}
-                    </div>
+             <div class="form-group">
+                <label class="col-xs-3 control-label">Recruit</label>
+                <div class="col-xs-5" name="RSN">
+                        {{ form.recruit(class_="form-control") }}
                 </div>
             </div>
 
@@ -73,25 +62,22 @@
     </div>
 </div>
 
-
 <table class="table" id="grid">
     <thead>
         <tr>
-            <th>Event Date</th>
-            <th>Host</th>
+            <th>Date</th>
             <th>Activity Type</th>
-            <th>Description</th>
-            <th>Attendee Count</th>
+            <th>Recruiter</th>
+            <th>Recruit</th>
         <tr>
     </thead>
     <tbody>
-        {% for row in eventstable %}
+        {% for row in recruitstable %}
         <tr>
-            <td>{{ row.event_date }}</td>
-            <td>{{ row.host }}</td>
+            <td>{{ row.recruit_date }}</td>
             <td>{{ row.activity_type }}</td>
-            <td>{{ row.description }}</td>
-            <td>{{ row.attendee_count }}</td>
+            <td>{{ row.recruiter }}</td>
+            <td>{{ row.recruit }}</td>
         </tr>
         {% endfor %}
     </tbody>
