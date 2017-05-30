@@ -13,10 +13,10 @@ class CapsForm(FlaskForm):
     rsn = SelectField("RSN Choices", choices=rsnchoices, validators=[DataRequired()])
 
     captypechoices = [
-        ('0', 'No'),
-        ('1', 'New'),
-        ('2', 'Vacation'),
-        ('3', 'Yes')
+        ('No', 'No'),
+        ('New', 'New'),
+        ('Vacation', 'Vacation'),
+        ('Yes', 'Yes')
     ]
     captype = SelectField("Cap Type Choices", choices=captypechoices, validators=[DataRequired()])
 
