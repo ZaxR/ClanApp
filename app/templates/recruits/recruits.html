@@ -14,21 +14,16 @@
             {% endif %}
         {% endwith %}
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Recently Added Cap <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Recruits <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
         </div>
         <div class="panel-body">
-
-            <a href="{{ url_for('caps.add_cap_week') }}" class="btn btn-default btn-lg">
-                <i class="fa fa-plus"></i> Add Week
-            </a>
-
             <table class="table" id="grid">
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Week</th>
-                        <th>RSN</th>
-                        <th>Cap Type</th>
+                        <th>Activity Type</th>
+                        <th>Recruiter</th>
+                        <th>Recruit</th>
                         <th>Action(s)</th>
                     <tr>
                 </thead>
@@ -38,25 +33,25 @@
                             {{ form.csrf_token }}
                             <td>
                                 <div class="input-group input-append date" id="datePicker">
-                                    {{ form.capdate(class_="form-control") }}
+                                    {{ form.recruit_date(class_="form-control") }}
                                     <span class="input-group-addon add-on"><span class="glyphicon glyphicon-calendar"></span></span>
                                 </div>
                             </td>
 
                             <td>
-                                <div class="col-xs-12" name="RSN">
-                                    Auto-filled
+                                <div class="col-xs-12" name="Activity Type">
+                                    {{ form.activity(class_="form-control") }}
                                 </div>
                             </td>
                             <td>
-                                <div class="col-xs-12" name="RSN">
-                                    {{ form.rsn(class_="form-control") }}
+                                <div class="col-xs-12" name="Recruiter">
+                                    {{ form.recruiter(class_="form-control") }}
                                 </div>
                             </td>
 
                             <td>
-                                <div class="col-xs-12" name="captype">
-                                    {{ form.captype(class_="form-control") }}
+                                <div class="col-xs-12" name="Recruit">
+                                    {{ form.recruit(class_="form-control") }}
                                 </div>
                             </td>
 
@@ -67,18 +62,18 @@
                             </td>
                         </form>
                     </tr>
-                    {% for row in captable %}
+                    {% for row in recruit_table %}
                     <tr>
-                        <td>{{ row.capdate }}</td>
-                        <td>{{ row.week }}</td>
-                        <td>{{ row.rsn }}</td>
-                        <td>{{ row.captype }}</td>
+                        <td>{{ row.recruit_date }}</td>
+                        <td>{{ row.activity_type }}</td>
+                        <td>{{ row.recruiter }}</td>
+                        <td>{{ row.recruit }}</td>
                         <td>
-                            <a href="{{ url_for('caps.edit_cap', id=row.id) }}">
+                            <a href="{{ url_for('recruits.edit_recruit', id=row.id) }}">
                                 <i class="fa fa-pencil"></i> Edit
                             </a>
 
-                            <a href="{{ url_for('caps.delete_cap', id=row.id) }}">
+                            <a href="{{ url_for('recruits.delete_recruit', id=row.id) }}">
                                 <i class="fa fa-trash"></i> Delete
                             </a>
                         </td>

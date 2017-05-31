@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from flask_paginate import Pagination, get_page_args
 from sqlalchemy import desc
 
 from bokeh.charts import Bar, Line
@@ -15,9 +16,9 @@ from . import recruits
 from app.recruits.forms import RecruitsForm
 
 
-@recruits.route('/addrecruits', methods=['GET', 'POST'])
+@recruits.route('/recruits', methods=['GET', 'POST'])
 @login_required
-def addrecruits():
+def list_recruits():
     form = RecruitsForm(request.form)
 
     if request.method == 'POST' and form.validate():
@@ -40,10 +41,71 @@ def addrecruits():
         models.db.session.commit()
         flash('Recruit activity successfully added!')
 
-        return redirect(url_for('recruits.addrecruits'))
+        return redirect(url_for('recruits.list_recruits'))
 
-    return render_template('recruits/addrecruits.html', form=form,
-                           recruitstable=models.Recruits.query.order_by(desc(models.Recruits.id)).limit(10).all())
+    search = False
+    q = request.args.get('q')
+    if q:
+        search = True
+
+    page, per_page, offset = get_page_args()
+    recruit_table = models.Recruits.query.order_by(desc(models.Recruits.id))
+    recruit_table_render = recruit_table.limit(per_page).offset(offset)
+
+    pagination = Pagination(page=page, per_page=per_page, offset=offset, total=recruit_table.count(),search=search, record_name='recruit', css_framework='bootstrap3')
+
+    return render_template('recruits/recruits.html', recruit_table=recruit_table_render, pagination=pagination, title="Caps", action="recruits.add_recruit", form=form)
+
+
+@recruits.route('/recruits/add', methods=['GET', 'POST'])
+@login_required
+def add_recruit():
+    form = RecruitsForm(request.form)
+
+    if request.method == 'POST' and form.validate():
+        recruit_date = datetime.strftime(form.recruit_date.data, '%m/%d/%Y')
+        new_recruit = models.Recruits(recruit_date,
+                                      form.activity.data,
+                                      form.recruiter.data,
+                                      form.recruit.data,
+                                      points(form.recruit.data, form.activity.data, recruit_date),
+                                      change_to_recruit_count(form.activity.data))
+        models.db.session.add(new_recruit)
+
+        if form.activity.data == 'Join':
+            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes')
+            models.db.session.add(new_account)
+        else:
+            account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
+            account.in_clan = 'No'
+
+        models.db.session.commit()
+        flash('Recruit activity successfully added!')
+
+        return redirect(url_for('recruits.list_recruits'))
+
+    return render_template('recruits/recruits.html', action="recruits.add_recruit", form=form, title="Add Recruit", button_text="Add")
+
+
+@recruits.route('/recruits/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_recruit(id):
+    recruit = models.Caps.query.get_or_404(id)
+    form = RecruitsForm(obj=recruit)
+
+    return render_template('recruits/recruit.html', action="recruits.edit_recruit", id=id, form=form,
+                           title="Edit Recruit", button_text="Save Changes")
+
+
+@recruits.route('/recruits/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete_recruit(id):
+    recruit = models.Recruits.query.get_or_404(id)
+    db.session.delete(recruit)
+    db.session.commit()
+    flash('You have successfully deleted the recruit.')
+
+    return redirect(url_for('recruits.list_recruits'))
 
 
 def points(recruit, type, date):

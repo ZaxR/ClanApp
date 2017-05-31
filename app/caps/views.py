@@ -1,43 +1,51 @@
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from flask_paginate import Pagination, get_page_args
 from sqlalchemy import desc
 
 from app import db, models
 from . import caps
 from app.caps.forms import CapsForm
 
+
 @caps.route('/caps', methods=['GET', 'POST'])
 @login_required
 def list_caps():
-    captable = models.Caps.query.order_by(desc(models.Caps.id)).limit(10).all()
-
-    return render_template('caps/caps.html', captable=captable, title="Caps")
-
-
-@caps.route('/caps/add', methods=['GET', 'POST'])
-@login_required
-def add_cap():
     form = CapsForm(request.form)
 
-    if request.method == 'POST' and form.validate():
-        new_cap = models.Caps(datetime.strftime(form.capdate.data, '%m/%d/%Y'),
-                              capweek(form.capdate.data),
-                              form.rsn.data,
-                              form.captype.data)
+    if request.method == 'POST':
+        if form.validate():
+            new_cap = models.Caps(datetime.strftime(form.capdate.data, '%m/%d/%Y'),
+                                  capweek(form.capdate.data),
+                                  form.rsn.data,
+                                  form.captype.data)
 
-        try:
-            # add department to the database
-            db.session.add(new_cap)
-            db.session.commit()
-            flash('Cap successfully added.')
-        except:
-            flash('Something went wrong - please try again.')
+            try:
+                db.session.add(new_cap)
+                db.session.commit()
+                flash('Cap successfully added.')
+            except:
+                flash('Something went wrong - please try again.')
 
-        return redirect(url_for('caps.list_caps'))
+            return redirect(url_for('caps.list_caps'))
+        else:
+            flash('Fill the form completely and properly, dumb-dumb.')
 
-    return render_template('caps/cap.html', action="caps.add_cap", form=form, title="Add Cap", button_text="Add")
+    search = False
+    q = request.args.get('q')
+    if q:
+        search = True
+
+    page, per_page, offset = get_page_args()
+    captable = models.Caps.query.order_by(desc(models.Caps.id))
+    test = captable.limit(per_page).offset(offset)
+
+    pagination = Pagination(page=page, per_page=per_page, offset=offset, total=captable.count(),
+                            search=search, record_name='cap', css_framework='bootstrap3')
+
+    return render_template('caps/caps.html', captable=test, pagination=pagination, title="Caps", action="caps.list_caps", form=form)
 
 
 @caps.route('/caps/edit/<int:id>', methods=['GET', 'POST'])
@@ -59,16 +67,20 @@ def edit_cap(id):
     form.capdate.data = datetime.strptime(cap.capdate, '%m/%d/%Y')
     form.rsn.data = cap.rsn
     form.captype.data = cap.captype
-    return render_template('caps/cap.html', action="caps.edit_cap", id=id, form=form, title="Edit Cap", button_text="Save Changes")
+    return render_template('caps/cap.html', action="caps.edit_cap", id=id, form=form,
+                           title="Edit Cap", button_text="Save Changes")
 
 
 @caps.route('/caps/delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def delete_cap(id):
-    cap = models.Caps.query.get_or_404(id)
-    db.session.delete(cap)
-    db.session.commit()
-    flash('You have successfully deleted the cap.')
+    try:
+        cap = models.Caps.query.get_or_404(id)
+        db.session.delete(cap)
+        db.session.commit()
+        flash('You have successfully deleted the cap.')
+    except:
+        flash('Something went wrong - please try again.')
 
     return redirect(url_for('caps.list_caps'))
 
@@ -76,9 +88,8 @@ def delete_cap(id):
 @caps.route('/caps/add_week', methods=['GET', 'POST'])
 @login_required
 def add_cap_week():
-    potential_cappers = models.Accounts.query.filter(models.Accounts.in_clan=="Yes").all()
+    potential_cappers = models.Accounts.query.filter(models.Accounts.in_clan == "Yes").all()
     today = datetime.now().date()
-    print(type(datetime.now().date()))
 
     for rsn in potential_cappers:
         new_cap = models.Caps(today.strftime('%m/%d/%Y'),
