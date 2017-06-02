@@ -16,7 +16,10 @@ def list_caps():
     form = CapsForm(request.form)
 
     if request.method == 'POST':
-        return add_cap(form)
+        if form.validate():
+            return add_cap(form)
+        else:
+            flash('Fill the form completely and properly, dumb-dumb.')
 
     page, per_page, offset = get_page_args()
     cap_table = models.Caps.query.order_by(desc(models.Caps.id))
@@ -31,29 +34,25 @@ def list_caps():
 
 
 def add_cap(form):  # Doesn't need to update "future" posts (like edit_cap()), because adding will only be done by cron scheduler for new week
-    if form.validate():
-        date = datetime.strftime(form.capdate.data, '%m/%d/%Y')
-        week = capweek(form.capdate.data)
-        rsn = form.rsn.data
-        cap_type = form.captype.data
-        caps_possible = possible_caps(form.rsn.data, date, "Add")
-        count_caps = cap_count(form.rsn.data, date, form.captype.data, "Add")
-        percentage_capped = cap_percentage(count_caps, caps_possible)
-        streak = cap_streak(form.rsn.data, date, form.captype.data, "Add")
-        recent_cap = last_cap(form.rsn.data, date, form.captype.data, "Add")
+    date = datetime.strftime(form.capdate.data, '%m/%d/%Y')
+    week = capweek(form.capdate.data)
+    rsn = form.rsn.data
+    cap_type = form.captype.data
+    caps_possible = possible_caps(form.rsn.data, date, "Add")
+    count_caps = cap_count(form.rsn.data, date, form.captype.data, "Add")
+    percentage_capped = cap_percentage(count_caps, caps_possible)
+    streak = cap_streak(form.rsn.data, date, form.captype.data, "Add")
+    recent_cap = last_cap(form.rsn.data, date, form.captype.data, "Add")
 
-        new_cap = models.Caps(date, week, rsn, cap_type,
-                              caps_possible, count_caps, percentage_capped, streak, recent_cap)
+    new_cap = models.Caps(date, week, rsn, cap_type,
+                          caps_possible, count_caps, percentage_capped, streak, recent_cap)
 
-        try:
-            db.session.add(new_cap)
-            db.session.commit()
-            flash('Cap successfully added.')
-        except:
-            flash('Something went wrong. Please try again.')
-
-    else:
-        flash('Fill the form completely and properly, dumb-dumb.')
+    try:
+        db.session.add(new_cap)
+        db.session.commit()
+        flash('Cap successfully added.')
+    except:
+        flash('Something went wrong. Please try again.')
 
     return redirect(url_for('caps.list_caps'))
 
@@ -127,14 +126,25 @@ def add_cap_week():
     today = datetime.now().date()
 
     for rsn in potential_cappers:
-        new_cap = models.Caps(today.strftime('%m/%d/%Y'),
-                              capweek(today),
-                              rsn.rsn,
-                              "No")
-        db.session.add(new_cap)
-    db.session.commit()
+        date = today.strftime('%m/%d/%Y')
+        week = capweek(today)
+        name = rsn.rsn
+        cap_type = "No"
+        caps_possible = possible_caps(name, date, "Add")
+        count_caps = cap_count(name, date, cap_type, "Add")
+        percentage_capped = cap_percentage(count_caps, caps_possible)
+        streak = cap_streak(name, date, cap_type, "Add")
+        recent_cap = last_cap(name, date, cap_type, "Add")
 
-    flash('You have successfully added a week.')
+        new_cap = models.Caps(date, week, name, cap_type,
+                              caps_possible, count_caps, percentage_capped, streak, recent_cap)
+        db.session.add(new_cap)
+
+    try:
+        db.session.commit()
+        flash('Successfully added caps for the week.')
+    except:
+        flash('Something went wrong. Please try again.')
 
     return redirect(url_for('caps.list_caps'))
 
