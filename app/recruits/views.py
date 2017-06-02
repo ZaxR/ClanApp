@@ -14,6 +14,7 @@ from bokeh.resources import INLINE
 from app import db, models
 from . import recruits
 from app.recruits.forms import RecruitsForm
+from app.caps.views import capweek
 
 
 @recruits.route('/recruits', methods=['GET', 'POST'])
@@ -22,47 +23,22 @@ def list_recruits():
     form = RecruitsForm(request.form)
 
     if request.method == 'POST' and form.validate():
-        recruit_date = datetime.strftime(form.recruit_date.data, '%m/%d/%Y')
-        new_recruit = models.Recruits(recruit_date,
-                                      form.activity.data,
-                                      form.recruiter.data,
-                                      form.recruit.data,
-                                      points(form.recruit.data, form.activity.data, recruit_date),
-                                      change_to_recruit_count(form.activity.data))
-        models.db.session.add(new_recruit)
-
-        if form.activity.data == 'Join':
-            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes')
-            models.db.session.add(new_account)
-        else:
-            account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
-            account.in_clan = 'No'
-
-        models.db.session.commit()
-        flash('Recruit activity successfully added!')
-
-        return redirect(url_for('recruits.list_recruits'))
-
-    search = False
-    q = request.args.get('q')
-    if q:
-        search = True
+        return add_recruit(form)
 
     page, per_page, offset = get_page_args()
     recruit_table = models.Recruits.query.order_by(desc(models.Recruits.id))
     recruit_table_render = recruit_table.limit(per_page).offset(offset)
 
-    pagination = Pagination(page=page, per_page=per_page, offset=offset, total=recruit_table.count(),search=search, record_name='recruit', css_framework='bootstrap3')
+    pagination = Pagination(page=page, per_page=per_page, offset=offset, total=recruit_table.count(),
+                            record_name='recruit', css_framework='bootstrap3')
 
-    return render_template('recruits/recruits.html', recruit_table=recruit_table_render, pagination=pagination, title="Caps", action="recruits.add_recruit", form=form)
+    return render_template('recruits/recruits.html', recruit_table=recruit_table_render,
+                           pagination=pagination, title="Recruits",
+                           action="recruits.list_recruits", form=form)
 
 
-@recruits.route('/recruits/add', methods=['GET', 'POST'])
-@login_required
-def add_recruit():
-    form = RecruitsForm(request.form)
-
-    if request.method == 'POST' and form.validate():
+def add_recruit(form):
+    if form.validate():
         recruit_date = datetime.strftime(form.recruit_date.data, '%m/%d/%Y')
         new_recruit = models.Recruits(recruit_date,
                                       form.activity.data,
@@ -70,21 +46,31 @@ def add_recruit():
                                       form.recruit.data,
                                       points(form.recruit.data, form.activity.data, recruit_date),
                                       change_to_recruit_count(form.activity.data))
+
         models.db.session.add(new_recruit)
 
         if form.activity.data == 'Join':
-            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes')
+            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=recruit_date)
+            new_cap_record = models.Caps(datetime.strftime(form.recruit_date.data, '%m/%d/%Y'),
+                                         capweek(form.recruit_date.data), form.recruit.data, "No", 1, 0, 0, 0, "")
             models.db.session.add(new_account)
+            models.db.session.add(new_cap_record)
         else:
             account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
             account.in_clan = 'No'
+            account.leave_date = recruit_date
 
-        models.db.session.commit()
-        flash('Recruit activity successfully added!')
+        try:
+            models.db.session.commit()
+            flash('Recruit activity successfully added!')
+        except:
+            flash('Something went wrong. Please try again.')
 
-        return redirect(url_for('recruits.list_recruits'))
+    else:
+        flash('Fill the form completely and properly, dumb-dumb.')
 
-    return render_template('recruits/recruits.html', action="recruits.add_recruit", form=form, title="Add Recruit", button_text="Add")
+    test = models.Accounts.query
+    return redirect(url_for('recruits.list_recruits'))
 
 
 @recruits.route('/recruits/edit/<int:id>', methods=['GET', 'POST'])
@@ -92,6 +78,8 @@ def add_recruit():
 def edit_recruit(id):
     recruit = models.Caps.query.get_or_404(id)
     form = RecruitsForm(obj=recruit)
+
+    # todo need to fill this in
 
     return render_template('recruits/recruit.html', action="recruits.edit_recruit", id=id, form=form,
                            title="Edit Recruit", button_text="Save Changes")
@@ -113,7 +101,7 @@ def points(recruit, type, date):
     if type == "Join":
         return 1
     else:
-        x = models.Recruits.query.filter_by(recruit=recruit).first()  # todo change to last, not first
+        x = models.Recruits.query.filter_by(recruit=recruit).order_by(desc(models.Recruits.id)).first()
         print(x.recruit_date)
         # todo change date and x.recruit_date to dates instead of strings
         days_in_clan = datetime.strptime(date, '%m/%d/%Y').date() - datetime.strptime(x.recruit_date, '%m/%d/%Y').date()

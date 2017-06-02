@@ -10,6 +10,7 @@ class CapsForm(FlaskForm):
     #week = StringField('Email Address', [validators.Length(min=0, max=35)])
 
     rsnchoices = [(account.rsn, account.rsn) for account in models.Accounts.query.all()]
+    rsnchoices.sort()
     rsn = SelectField("RSN Choices", choices=rsnchoices, validators=[DataRequired()])
 
     captypechoices = [

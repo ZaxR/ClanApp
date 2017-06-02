@@ -3,18 +3,22 @@
 {% block content %}
 
 <div class="col-md-8">
-    <div class="panel panel-primary">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <ul class = flashes>
                     {% for message in messages %}
                         {{message}}
                     {% endfor %}
                 </ul>
-            {% endif %}
-        {% endwith %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Recently Added Cap <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Caps <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
         </div>
         <div class="panel-body">
 
@@ -74,11 +78,11 @@
                         <td>{{ row.rsn }}</td>
                         <td>{{ row.captype }}</td>
                         <td>
-                            <a href="{{ url_for('caps.edit_cap', id=row.id) }}">
+                            <a href="{{ url_for('caps.edit_cap', cap_id=row.id) }}">
                                 <i class="fa fa-pencil"></i> Edit
                             </a>
-
-                            <a href="{{ url_for('caps.delete_cap', id=row.id) }}">
+]
+                            <a href="{{ url_for('caps.delete_cap', cap_id=row.id) }}">
                                 <i class="fa fa-trash"></i> Delete
                             </a>
                         </td>
@@ -86,8 +90,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            {{ pagination.links }}
-            {{ pagination.info }}
+            <div class="pagination-bar">
+                {{ pagination.links }}
+                {{ pagination.info }}
+            </div>
         </div>
     </div>
 </div>

@@ -54,25 +54,87 @@ class Users(db.Model):
         return '<User: {}>'.format(self.username)
 
 
+class Players(db.Model):
+    __tablename__ = "players"
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(15), index=True, unique=False)
+    last_name = db.Column(db.String(15), index=True, unique=False)
+    discord_name = db.Column(db.String(15), index=True, unique=False)
+    website_name = db.Column(db.String(15), index=True, unique=False)
+
+    birthday = db.Column(db.String(15), index=True, unique=False)
+    age = db.Column(db.Integer, index=True, unique=False)
+    rs_start_date = db.Column(db.String(15), index=True, unique=False)
+    years_playing_rs = db.Column(db.Integer, index=True, unique=False)
+    gender = db.Column(db.String(15), index=True, unique=False)
+    city = db.Column(db.String(15), index=True, unique=False)
+    state = db.Column(db.String(15), index=True, unique=False)
+    country = db.Column(db.String(15), index=True, unique=False)
+
+    gp_donations = db.Column(db.Integer, index=True, unique=False)
+    cash_donations = db.Column(db.Integer, index=True, unique=False)
+
+    def __init__(self):
+        self.first_name = None
+        self.last_name = None
+        self.discord_name = None
+        self.website_name = None
+        self.birthday = None
+        self.age = None
+        self.rs_start_date = None
+        self.years_playing_rs = None
+        self.gender = None
+        self.city = None
+        self.state = None
+        self.country = None
+        self.gp_donations = None
+        self.cash_donations = None
+
+
 class Accounts(db.Model):
     __tablename__ = "accounts"
     id = db.Column(db.Integer, primary_key=True)
     rsn = db.Column(db.String(15), index=True, unique=False)
     in_clan = db.Column(db.String(3), index=True, unique=False)
+    version = db.Column(db.String(15), index=True, unique=False)
+    rank = db.Column(db.String(15), index=True, unique=False)
+    join_date = db.Column(db.String(15), index=True, unique=False)
 
-    def __init__(self, rsn, in_clan):
+    # Analytics
+    cap_points = db.Column(db.Integer, index=True, unique=False)
+    recruit_points = db.Column(db.Integer, index=True, unique=False)
+    event_points = db.Column(db.Integer, index=True, unique=False)
+    xp_points = db.Column(db.Integer, index=True, unique=False)
+    past_rsns = db.Column(db.String(15), index=True, unique=False)
+    leave_date = db.Column(db.String(15), index=True, unique=False)
+
+    def __init__(self, rsn, in_clan, join_date, leave_date=""):
         self.rsn = rsn
         self.in_clan = in_clan
-
-        self.past_rsns = []
         self.version = "RS3"
-        self.rank = None  # How do I inherit this value from the Player who owns this account?
+        self.rank = "Recruit"
+        self.join_date = join_date
+        self.cap_points = 0
+        self.recruit_points = 0
+        self.event_points = 0
+        self.xp_points = 0
+        self.past_rsns = ""
+        self.leave_date = leave_date
 
-        self.join_date = None  # need this for xp math, time in clan, etc.
-        self.caps = {}  # its own class?; wk number: 1/5 options from rank sheet
-        self.recruits = {}  # its own class?: recruit_transaction_id: date, recruit_name, enter/leave, points?
-        self.events = {}  # its own class?: event_transaction_id: begin_date, end_date, [participants], points?
-        self.clanXp = 0  # pull live from latest db entry
+
+class Ranks(db.Model):
+    __tablename__ = "ranks"
+    id = db.Column(db.Integer, primary_key=True)
+    rank = db.Column(db.String(15), index=True, unique=False)
+    points_required = db.Column(db.Integer, index=True, unique=False)
+    cap_recruits_required = db.Column(db.Integer, index=True, unique=False)
+    description = db.Column(db.String(50), index=True, unique=False)
+
+    def __init__(self, rank, points_required, cap_recruits_required, description):
+        self.rank = rank
+        self.points_required = points_required
+        self.cap_recruits_required = cap_recruits_required
+        self.description = description
 
 
 class Caps(db.Model):
@@ -83,11 +145,23 @@ class Caps(db.Model):
     rsn = db.Column(db.String(15), index=True, unique=False)
     captype = db.Column(db.Integer, index=True, unique=False)
 
-    def __init__(self, capdate, week, rsn, captype):
+    # Analytics
+    possible_caps = db.Column(db.Integer, index=True, unique=False)
+    cap_count = db.Column(db.Integer, index=True, unique=False)
+    cap_percentage = db.Column(db.Integer, index=True, unique=False)
+    cap_streak = db.Column(db.Integer, index=True, unique=False)
+    last_cap = db.Column(db.String(15), index=True, unique=False)
+
+    def __init__(self, capdate, week, rsn, captype, possible_caps, cap_count, cap_percentage, cap_streak, last_cap):
         self.capdate = capdate
         self.week = week
         self.rsn = rsn
         self.captype = captype
+        self.possible_caps = possible_caps
+        self.cap_count = cap_count
+        self.cap_percentage = cap_percentage
+        self.cap_streak = cap_streak
+        self.last_cap = last_cap
 
     def serialize(self):
         return {
