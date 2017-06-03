@@ -2,7 +2,7 @@ $(document).ready(function() {
     $('#datePicker')
         .datepicker({
             autoclose: true,
-            format: 'mm/dd/yyyy'
+            format: 'yyyy/mm/dd'
         })
         .on('changeDate', function(e) {
             // Revalidate the date field
@@ -30,7 +30,7 @@ $(document).ready(function() {
                         message: 'The date is required'
                     },
                     date: {
-                        format: 'mm/dd/yyyy',
+                        format: 'yyyy/mm/dd',
                         message: 'The date is not a valid'
                     }
                 }

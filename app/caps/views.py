@@ -34,7 +34,7 @@ def list_caps():
 
 
 def add_cap(form):  # Doesn't need to update "future" posts (like edit_cap()), because adding will only be done by cron scheduler for new week
-    date = datetime.strftime(form.capdate.data, '%m/%d/%Y')
+    date = form.capdate.data
     week = capweek(form.capdate.data)
     rsn = form.rsn.data
     cap_type = form.captype.data
@@ -67,7 +67,7 @@ def edit_cap(cap_id):
         if form.validate():
             previous_capdate = cap.capdate
 
-            cap.capdate = datetime.strftime(form.capdate.data, '%m/%d/%Y')
+            cap.capdate = form.capdate.data
             cap.week = capweek(form.capdate.data)
             cap.name = form.rsn.data
             cap.captype = form.captype.data
@@ -99,7 +99,7 @@ def edit_cap(cap_id):
 
         return redirect(url_for('caps.list_caps'))
 
-    form.capdate.data = datetime.strptime(cap.capdate, '%m/%d/%Y')  # needs to be at the bottom to format date properly
+    #form.capdate.data = datetime.strptime(cap.capdate, '%m/%d/%Y')  # needs to be at the bottom to format date properly
 
     return render_template('caps/cap.html', action="caps.edit_cap", cap_id=cap_id, form=form,
                            title="Edit Cap", button_text="Save Changes")
@@ -126,7 +126,7 @@ def add_cap_week():
     today = datetime.now().date()
 
     for rsn in potential_cappers:
-        date = today.strftime('%m/%d/%Y')
+        date = today
         week = capweek(today)
         name = rsn.rsn
         cap_type = "No"
@@ -149,13 +149,9 @@ def add_cap_week():
     return redirect(url_for('caps.list_caps'))
 
 
-def capweek(somedate, clanstart='2016-5-1'):
-    try:
-        d1 = somedate
-    except:
-        d1 = datetime.now().date()
-
+def capweek(d1, clanstart='2016-5-1'):
     d0 = datetime.strptime(clanstart, '%Y-%m-%d').date()
+
     n, remainder = divmod((d1 - d0).days + 1, 7)
     if remainder > 0:
         n += 1
@@ -189,7 +185,8 @@ def cap_percentage(count, possible):
 def cap_streak(rsn, date, captype, form_type):
     from itertools import groupby
 
-    cap_list = [c.captype for c in models.Caps.query.filter_by(rsn=rsn).order_by(models.Caps.capdate).filter(models.Caps.capdate <= date)]
+    cap_list = [c.captype for c in models.Caps.query.filter_by(rsn=rsn).
+        order_by(models.Caps.capdate).filter(models.Caps.capdate <= date)]
 
     try:
         if form_type == "Add":
@@ -211,7 +208,7 @@ def last_cap(rsn, date, captype, form_type):
     try:
         return last.capdate
     except:
-        return ""
+        return None
 
 
 @caps.route('/viewcaps', methods=['GET', 'POST'])

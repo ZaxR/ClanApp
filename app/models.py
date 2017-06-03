@@ -62,9 +62,9 @@ class Players(db.Model):
     discord_name = db.Column(db.String(15), index=True, unique=False)
     website_name = db.Column(db.String(15), index=True, unique=False)
 
-    birthday = db.Column(db.String(15), index=True, unique=False)
+    birthday = db.Column(db.Date, index=True, unique=False)
     age = db.Column(db.Integer, index=True, unique=False)
-    rs_start_date = db.Column(db.String(15), index=True, unique=False)
+    rs_start_date = db.Column(db.Date, index=True, unique=False)
     years_playing_rs = db.Column(db.Integer, index=True, unique=False)
     gender = db.Column(db.String(15), index=True, unique=False)
     city = db.Column(db.String(15), index=True, unique=False)
@@ -98,7 +98,7 @@ class Accounts(db.Model):
     in_clan = db.Column(db.String(3), index=True, unique=False)
     version = db.Column(db.String(15), index=True, unique=False)
     rank = db.Column(db.String(15), index=True, unique=False)
-    join_date = db.Column(db.String(15), index=True, unique=False)
+    join_date = db.Column(db.Date, index=True, unique=False)
 
     # Analytics
     cap_points = db.Column(db.Integer, index=True, unique=False)
@@ -106,9 +106,9 @@ class Accounts(db.Model):
     event_points = db.Column(db.Integer, index=True, unique=False)
     xp_points = db.Column(db.Integer, index=True, unique=False)
     past_rsns = db.Column(db.String(15), index=True, unique=False)
-    leave_date = db.Column(db.String(15), index=True, unique=False)
+    leave_date = db.Column(db.Date, index=True, unique=False)
 
-    def __init__(self, rsn, in_clan, join_date, leave_date=""):
+    def __init__(self, rsn, in_clan, join_date, leave_date=None):
         self.rsn = rsn
         self.in_clan = in_clan
         self.version = "RS3"
@@ -140,7 +140,7 @@ class Ranks(db.Model):
 class Caps(db.Model):
     __tablename__ = "caps"
     id = db.Column(db.Integer, primary_key=True)
-    capdate = db.Column(db.String(15), index=True, unique=False)  # db.Column(db.DateTime)
+    capdate = db.Column(db.Date, index=True, unique=False)
     week = db.Column(db.String(15), index=True, unique=False)
     rsn = db.Column(db.String(15), index=True, unique=False)
     captype = db.Column(db.Integer, index=True, unique=False)
@@ -150,9 +150,10 @@ class Caps(db.Model):
     cap_count = db.Column(db.Integer, index=True, unique=False)
     cap_percentage = db.Column(db.Integer, index=True, unique=False)
     cap_streak = db.Column(db.Integer, index=True, unique=False)
-    last_cap = db.Column(db.String(15), index=True, unique=False)
+    last_cap = db.Column(db.Date, index=True, unique=False)
 
-    def __init__(self, capdate, week, rsn, captype, possible_caps, cap_count, cap_percentage, cap_streak, last_cap):
+    def __init__(self, capdate, week, rsn, captype,
+                 possible_caps, cap_count, cap_percentage, cap_streak, last_cap=None):
         self.capdate = capdate
         self.week = week
         self.rsn = rsn
@@ -175,12 +176,12 @@ class Caps(db.Model):
 class Recruits(db.Model):
     __tablename__ = "recruits"
     id = db.Column(db.Integer, primary_key=True)
-    recruit_date = db.Column(db.String(15), index=True, unique=False)  # db.Column(db.DateTime)
-    activity_type = db.Column(db.String(15), index=True, unique=False)  # join or leave
-    recruiter = db.Column(db.String(15), index=True, unique=False)  # rsn from Account.rsn list or "unknown"
+    recruit_date = db.Column(db.Date, index=True, unique=False)
+    activity_type = db.Column(db.String(15), index=True, unique=False)
+    recruiter = db.Column(db.String(15), index=True, unique=False)
     recruit = db.Column(db.String(15), index=True, unique=False)
     points = db.Column(db.Integer, index=True, unique=False)
-    change_to_recruit_count = db.Column(db.Integer, index=True, unique=False)  # recountcalc(Type)
+    change_to_recruit_count = db.Column(db.Integer, index=True, unique=False)
 
     def __init__(self, recruit_date, activity_type, recruiter, recruit, points, change_to_recruit_count):
         self.recruit_date = recruit_date
@@ -195,7 +196,7 @@ class Events(db.Model):
     __tablename__ = "events"
     id = db.Column(db.Integer, primary_key=True)
 
-    event_date = db.Column(db.String(15), index=True, unique=False)  # db.Column(db.DateTime)
+    event_date = db.Column(db.Date, index=True, unique=False)
     host = db.Column(db.String(15), index=True, unique=False)
     activity_type = db.Column(db.String(15), index=True, unique=False)
     description = db.Column(db.String(15), index=True, unique=False)
@@ -216,6 +217,7 @@ class XP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rsn = db.Column(db.String(15), index=True, unique=False)
     xp = db.Column(db.Integer, index=True, unique=False)
+    # something to capture timestamp of last pull
 
     def __init__(self, rsn, xp):
         self.rsn = rsn

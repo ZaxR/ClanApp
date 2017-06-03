@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, time
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from flask_paginate import Pagination, get_page_args
@@ -39,26 +39,26 @@ def list_recruits():
 
 def add_recruit(form):
     if form.validate():
-        recruit_date = datetime.strftime(form.recruit_date.data, '%m/%d/%Y')
-        new_recruit = models.Recruits(recruit_date,
+        new_recruit = models.Recruits(form.recruit_date.data,
                                       form.activity.data,
                                       form.recruiter.data,
                                       form.recruit.data,
-                                      points(form.recruit.data, form.activity.data, recruit_date),
+                                      points(form.recruit.data, form.activity.data, form.recruit_date.data),
                                       change_to_recruit_count(form.activity.data))
 
         models.db.session.add(new_recruit)
 
         if form.activity.data == 'Join':
-            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=recruit_date)
-            new_cap_record = models.Caps(datetime.strftime(form.recruit_date.data, '%m/%d/%Y'),
-                                         capweek(form.recruit_date.data), form.recruit.data, "No", 1, 0, 0, 0, "")
+            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=form.recruit_date.data)
+            new_cap_record = models.Caps(form.recruit_date.data,
+                                         capweek(form.recruit_date.data), form.recruit.data, "No", 1, 0, 0, 0, None)
+
             models.db.session.add(new_account)
             models.db.session.add(new_cap_record)
         else:
             account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
             account.in_clan = 'No'
-            account.leave_date = recruit_date
+            account.leave_date = form.recruit_date.data
 
         try:
             models.db.session.commit()
@@ -76,10 +76,41 @@ def add_recruit(form):
 @recruits.route('/recruits/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_recruit(id):
-    recruit = models.Caps.query.get_or_404(id)
+    print(id, type(id))
+    recruit = models.Recruits.query.get_or_404(id)
     form = RecruitsForm(obj=recruit)
 
-    # todo need to fill this in
+    if request.method == 'POST':
+        if form.validate():
+            previous_recruit_date = recruit.recruit_date
+
+            recruit.recruit_date = form.recruit_date.data
+            recruit.activity_type = form.activity.data
+            recruit.recruiter = form.recruiter.data
+            recruit.recruit = form.recruit.data
+
+            change_to_recruit_count(form.activity.data)
+
+            earlier_date = min(previous_recruit_date, recruit.recruit_date)
+
+            # Updates current recruit entry and all future entries
+            entries = [recruit for recruit in models.Recruits.query.filter_by(recruiter=recruit.recruiter).
+                filter(models.Recruits.recruit_date >= earlier_date).order_by(models.Recruits.recruit_date)]
+
+            for entry in entries:
+                entry.points = points(entry.recruit, entry.activity_type, entry.recruit_date)  #  "Edit"
+
+            try:
+                db.session.add(recruit)
+                db.session.commit()
+                flash('You have successfully edited the recruiting entry.')
+            except:
+                flash('Something went wrong. Please try again.')
+
+        else:
+            flash('Fill the form completely and properly, dumb-dumb.')
+
+        return redirect(url_for('recruits.list_recruits'))
 
     return render_template('recruits/recruit.html', action="recruits.edit_recruit", id=id, form=form,
                            title="Edit Recruit", button_text="Save Changes")
@@ -102,10 +133,8 @@ def points(recruit, type, date):
         return 1
     else:
         x = models.Recruits.query.filter_by(recruit=recruit).order_by(desc(models.Recruits.id)).first()
-        print(x.recruit_date)
         # todo change date and x.recruit_date to dates instead of strings
-        days_in_clan = datetime.strptime(date, '%m/%d/%Y').date() - datetime.strptime(x.recruit_date, '%m/%d/%Y').date()
-        print(days_in_clan)
+        days_in_clan = date - x.recruit_date
         if days_in_clan.days >= 7:
             return 0
         return -1

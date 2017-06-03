@@ -6,14 +6,18 @@ from app import models
 
 
 class RecruitsForm(FlaskForm):
-    recruit_date = DateField('Event Date', format='%m/%d/%Y')
+    def __init__(self, *args, **kwargs):
+        super(RecruitsForm, self).__init__(*args, **kwargs)
+        self.recruiter.choices = [(account.rsn, account.rsn) for account in models.Accounts.query]
+        self.recruiter.choices.extend([('***Unknown***', '***Unknown***'),
+                                 ("***Alts***", "***Alts***"), ("***Founder***", "***Founder***")])
+        self.recruiter.choices.sort(key=lambda t: tuple(t[0].lower()))
+
+    recruit_date = DateField('Event Date', format='%Y/%m/%d')
 
     activity = SelectField("Activity Type Choices", choices=[('Join', 'Join'), ('Leave', 'Leave')],
                            validators=[DataRequired()])
 
-    rsnchoices = [(account.rsn, account.rsn) for account in models.Accounts.query]
-    rsnchoices.extend([('***Unknown***','***Unknown***'), ("***Alts***","***Alts***"), ("***Founder***","***Founder***")])
-    rsnchoices.sort(key=lambda t: tuple(t[0].lower()))
-    recruiter = SelectField("RSN Choices", choices=rsnchoices, validators=[DataRequired()])
+    recruiter = SelectField("RSN Choices", validators=[DataRequired()])
 
     recruit = StringField('recruit', validators=[DataRequired()])

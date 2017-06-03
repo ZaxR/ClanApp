@@ -6,12 +6,15 @@ from app import models
 
 
 class CapsForm(FlaskForm):
-    capdate = DateField('Cap Date', format='%m/%d/%Y')
-    #week = StringField('Email Address', [validators.Length(min=0, max=35)])
+    def __init__(self, *args, **kwargs):
+        super(CapsForm, self).__init__(*args, **kwargs)
+        self.rsn.choices = [(account.rsn, account.rsn) for account in models.Accounts.query.all()]
+        self.rsn.choices.sort(key=lambda t: tuple(t[0].lower()))
 
-    rsnchoices = [(account.rsn, account.rsn) for account in models.Accounts.query.all()]
-    rsnchoices.sort(key=lambda t: tuple(t[0].lower()))
-    rsn = SelectField("RSN Choices", choices=rsnchoices, validators=[DataRequired()])
+    capdate = DateField('Cap Date', format='%Y/%m/%d')
+    # week = StringField('Cap Week', validators=[DataRequired()])
+
+    rsn = SelectField("RSN Choices", validators=[DataRequired()])
 
     captypechoices = [
         ('No', 'No'),
@@ -20,5 +23,3 @@ class CapsForm(FlaskForm):
         ('Yes', 'Yes')
     ]
     captype = SelectField("Cap Type Choices", choices=captypechoices, validators=[DataRequired()])
-
-# validators.number_range(0, 3, message='Please select a valid cap type.'

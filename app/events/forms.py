@@ -6,24 +6,20 @@ from app import models
 
 
 class EventsForm(FlaskForm):
-    event_date = DateField('Event Date', format='%m/%d/%Y')
+    def __init__(self, *args, **kwargs):
+        super(EventsForm, self).__init__(*args, **kwargs)
+        self.host.choices = [(account.rsn, account.rsn) for account in models.Accounts.query.all()]
+        self.host.choices.sort(key=lambda t: tuple(t[0].lower()))
 
-    rsnchoices = [(account.rsn, account.rsn) for account in models.Accounts.query.all()]
-    host = SelectField("RSN Choices", choices=rsnchoices, validators=[DataRequired()])
+    event_date = DateField('Event Date', format='%Y/%m/%d')
 
-    activity_type_choices = [
-        ('Boss Mass', 'Boss Mass'),
-        ('Drop Party', 'Drop Party'),
-        ('House Party', 'House Party'),
-        ('Mini Game', 'Mini game'),
-        ('Recruiting', 'Recruiting'),
-        ('Skilling Competition', 'Skilling Competition')
-    ]
+    host = SelectField("RSN Choices", validators=[DataRequired()])
+
+    activity_type_choices = [('Boss Mass', 'Boss Mass'), ('Drop Party', 'Drop Party'), ('House Party', 'House Party'),
+                             ('Mini Game', 'Mini game'), ('Recruiting', 'Recruiting'),
+                             ('Skilling Competition', 'Skilling Competition')]
     activity_type = SelectField("Activity Type Choices", choices=activity_type_choices, validators=[DataRequired()])
 
     description = StringField('description', validators=[DataRequired()])
 
     attendee_count = IntegerField('attendee_count', validators=[DataRequired()])
-
-
-# validators.number_range(0, 3, message='Please select a valid cap type.'
