@@ -95,10 +95,10 @@ def edit_recruit(id):
 
             # Updates current recruit entry and all future entries
             entries = [recruit for recruit in models.Recruits.query.filter_by(recruiter=recruit.recruiter).
-                filter(models.Recruits.recruit_date >= earlier_date).order_by(models.Recruits.recruit_date)]
+                       filter(models.Recruits.recruit_date >= earlier_date).order_by(models.Recruits.recruit_date)]
 
             for entry in entries:
-                entry.points = points(entry.recruit, entry.activity_type, entry.recruit_date)  #  "Edit"
+                entry.points = points(entry.recruit, entry.activity_type, entry.recruit_date)  # "Edit"
 
             try:
                 db.session.add(recruit)
@@ -161,8 +161,9 @@ def viewrecruits():
                                      values=["Total Recruits", "Recruits Worth Points", "Remaining Recruits"],
                                      aggfunc=sum)
 
-    retention_pivot['Retention Rate'] = retention_pivot['Remaining Recruits'] / retention_pivot['Total Recruits'] * 100
-    # https://stackoverflow.com/questions/26313881/add-calculated-column-to-a-pandas-pivot-table
+    retention_pivot['Retention Rate'] = retention_pivot['Remaining Recruits'] / retention_pivot['Total Recruits']
+    right_order = ["Total Recruits", "Recruits Worth Points", "Remaining Recruits", "Retention Rate"]
+    retention_pivot = retention_pivot.reindex(columns=right_order)
 
     # count by recruiter by day
     count_by_recruiter = pd.crosstab(index=df.recruit_date, columns=df.recruiter, values=df.change_to_recruit_count,
@@ -184,13 +185,12 @@ def viewrecruits():
 
     bar = Bar(cumsum_stacked,
               label='recruit_date', values='value', stack='recruiter', agg='sum',
-              title="Total Clan Members by Reccruiter Since Inception",
               responsive=True,
               tools='', tooltips=tooltips, toolbar_location=None,
-              xlabel="Time", ylabel="Clan Size",
+              xlabel="datetime", ylabel="Clan Size",
               legend='top_right')
 
-    bar.xaxis.formatter = DatetimeTickFormatter(formats=dict(days=["%y"]))
+    # bar.xaxis.formatter = DatetimeTickFormatter(months=["%m"], days=["%d"], years=["%Y"])
 
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
@@ -199,14 +199,10 @@ def viewrecruits():
     script, div = components(bar)
 
     return render_template('recruits/viewrecruits.html',
-                           retention=retention_pivot.to_html(),
+                           retention=retention_pivot.to_html(formatters={'Retention Rate': '{:,.0%}'.format}),
                            count=count_by_recruiter.to_html(),
                            cumsum=cumsum_by_recruiter.to_html(),
                            plot_script=script,
                            plot_div=div,
                            js_resources=js_resources,
-                           css_resources=css_resources
-                           )
-
-# assign aggfuncs to values
-# aggfunc = {"change_to_recruit_count": [np.mean, sum], "points?": sum})
+                           css_resources=css_resources)
