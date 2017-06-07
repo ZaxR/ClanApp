@@ -2,7 +2,6 @@ import pandas as pd
 from datetime import datetime
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
-from flask_paginate import Pagination, get_page_args
 from sqlalchemy import desc, exists
 
 from app import db, models
@@ -10,65 +9,26 @@ from . import caps
 from app.caps.forms import CapsForm
 
 
+pd.set_option('display.max_colwidth', -1)
+
+
 @caps.route('/caps', methods=['GET', 'POST'])
 @login_required
 def list_caps():
-    form = CapsForm(request.form)
+    # Creates cap table view similar to Google Sheets version
+    df = pd.read_sql(models.Caps.query.statement, db.engine)
+    df['edit_links'] = df.apply(lambda row: '<a href="http://localhost:4000/caps/edit/{0}">'
+                                            '{1} <i class="fa fa-pencil"></i></a>'.
+                                            format(row['id'], row['captype']), axis=1)
 
-    if request.method == 'POST':
-        if db.session.query((exists().where(models.Caps.week == capweek(form.capdate.data)))).scalar():
-            cap = models.Caps.query.filter_by(rsn=form.rsn.data).filter(models.Caps.week == capweek(form.capdate.data)).first()
-            print(cap.id)
-            return edit_cap(cap.id)
-        else:
-            join_date = [date.join_date for date in models.Accounts.query.filter(models.Accounts.rsn == form.rsn.data)]
-            if capweek(form.capdate.data) < capweek(join_date[0]):
-                flash("Player not yet in clan. Please select a date after {join_date}".format(join_date=join_date[0]))
-            else:
-                """if the capweek isn't before the join date, since every other week is automatically added, 
-                it must be in the future"""
-                flash("That date's in the future. Since I'm pretty sure you're not psychic, please try another date.")
+    cap_summary = pd.crosstab(index=df.rsn, columns=df.week, values=df.edit_links,
+                              aggfunc=max, dropna=True, margins=False).fillna('')
+    cap_summary = cap_summary[natural_sort(cap_summary.columns)[::-1]]
+    cap_summary.index.name = None
+    cap_summary.columns.name = None
 
-            return redirect(url_for('caps.list_caps'))
-
-    page, per_page, offset = get_page_args()
-    cap_table = models.Caps.query.order_by(desc(models.Caps.id))
-    cap_table_render = cap_table.limit(per_page).offset(offset)
-
-    pagination = Pagination(page=page, per_page=per_page, offset=offset, total=cap_table.count(),
-                            record_name='cap', css_framework='bootstrap3')
-
-    return render_template('caps/caps.html', captable=cap_table_render, pagination=pagination, title="Quick Update",
-                           action="caps.list_caps", form=form)
-
-
-
-def add_cap(form):  # Doesn't need to update "future" posts (like edit_cap()), because adding will only be done by cron scheduler for new week
-    if form.validate():
-        date = form.capdate.data
-        week = capweek(form.capdate.data)
-        rsn = form.rsn.data
-        cap_type = form.captype.data
-        caps_possible = possible_caps(form.rsn.data, date, "Add")
-        count_caps = cap_count(form.rsn.data, date, form.captype.data, "Add")
-        percentage_capped = cap_percentage(count_caps, caps_possible)
-        streak = cap_streak(form.rsn.data, date, form.captype.data, "Add")
-        recent_cap = last_cap(form.rsn.data, date, form.captype.data, "Add")
-
-        new_cap = models.Caps(date, week, rsn, cap_type,
-                              caps_possible, count_caps, percentage_capped, streak, recent_cap)
-
-        try:
-            db.session.add(new_cap)
-            db.session.commit()
-            flash('Cap successfully added.')
-        except:
-            flash('Something went wrong. Please try again.')
-
-        return redirect(url_for('caps.list_caps'))
-
-    else:
-        flash('Fill the form completely and properly, dumb-dumb.')
+    return render_template('caps/caps.html', action="caps.list_caps",
+                           cap_summary=cap_summary.to_html(classes='table table-hover table-condensed', escape=False))
 
 
 @caps.route('/caps/edit/<int:cap_id>', methods=['GET', 'POST'])
@@ -79,6 +39,19 @@ def edit_cap(cap_id):
 
     if request.method == 'POST':
         if form.validate():
+            if cap.week != capweek(form.capdate.data):
+                flash('Please select a date that falls within the selected cap week or edit a different record.')
+                return redirect(url_for('caps.edit_cap', cap_id=cap_id))
+
+            join_date = [date.join_date for date in models.Accounts.query.filter(models.Accounts.rsn == cap.rsn)]
+            if form.capdate.data < join_date[0]:
+                flash("Player not yet in clan. Please select a date on or after {join_date}".format(join_date=join_date[0]))
+                return redirect(url_for('caps.edit_cap', cap_id=cap_id))
+
+            if form.capdate.data > datetime.now().date():
+                flash("That date's in the future. Since I'm pretty sure you're not psychic, please try another date.")
+                return redirect(url_for('caps.edit_cap', cap_id=cap_id))
+
             previous_capdate = cap.capdate
 
             cap.capdate = form.capdate.data
@@ -113,12 +86,11 @@ def edit_cap(cap_id):
 
         return redirect(url_for('caps.list_caps'))
 
-    #form.capdate.data = datetime.strptime(cap.capdate, '%m/%d/%Y')  # needs to be at the bottom to format date properly
-
     return render_template('caps/cap.html', action="caps.edit_cap", cap_id=cap_id, form=form,
-                           title="Edit Cap", button_text="Save Changes")
+                           title="Edit Cap", button_text="Save Changes", rsn=cap.rsn)
 
 
+# Not currently used. Could be added to an admin panel
 @caps.route('/caps/delete/<int:cap_id>', methods=['GET', 'POST'])
 @login_required
 def delete_cap(cap_id):
@@ -133,6 +105,19 @@ def delete_cap(cap_id):
     return redirect(url_for('caps.list_caps'))
 
 
+# Only used by cron scheduled add_cap_week and on new recruit
+def add_cap(date, rsn, cap_type):
+    week = capweek(date)
+    caps_possible = possible_caps(rsn, date, "Add")
+    count_caps = cap_count(rsn, date, cap_type, "Add")
+    percentage_capped = cap_percentage(count_caps, caps_possible)
+    streak = cap_streak(rsn, date, cap_type, "Add")
+    recent_cap = last_cap(rsn, date, cap_type, "Add")
+
+    return models.Caps(date, week, rsn, cap_type,
+                       caps_possible, count_caps, percentage_capped, streak, recent_cap)
+
+
 @caps.route('/caps/add_week', methods=['GET', 'POST'])
 @login_required
 def add_cap_week():
@@ -140,18 +125,7 @@ def add_cap_week():
     today = datetime.now().date()
 
     for rsn in potential_cappers:
-        date = today
-        week = capweek(today)
-        name = rsn.rsn
-        cap_type = "No"
-        caps_possible = possible_caps(name, date, "Add")
-        count_caps = cap_count(name, date, cap_type, "Add")
-        percentage_capped = cap_percentage(count_caps, caps_possible)
-        streak = cap_streak(name, date, cap_type, "Add")
-        recent_cap = last_cap(name, date, cap_type, "Add")
-
-        new_cap = models.Caps(date, week, name, cap_type,
-                              caps_possible, count_caps, percentage_capped, streak, recent_cap)
+        new_cap = add_cap(today, rsn.rsn, "No")
         db.session.add(new_cap)
 
     try:
@@ -163,7 +137,7 @@ def add_cap_week():
     return redirect(url_for('caps.list_caps'))
 
 
-def capweek(d1, clanstart='2016-5-1'):
+def capweek(d1, clanstart='2016-5-3'):
     d0 = datetime.strptime(clanstart, '%Y-%m-%d').date()
 
     n, remainder = divmod((d1 - d0).days + 1, 7)
@@ -228,37 +202,27 @@ def last_cap(rsn, date, captype, form_type):
 @caps.route('/viewcaps', methods=['GET', 'POST'])
 @login_required
 def viewcaps():
-    df = pd.read_sql(models.Caps.query.statement, db.engine)
-
-    df['edit_links'] = df.apply(lambda row: '<a href="http://localhost:4000/caps/edit/{0}">{1}</a>'.format(row['id'], row['captype']), axis=1)
-
-    # Creates cap table view similar to Google Sheets version
-    cap_summary = pd.crosstab(index=df.rsn, columns=df.week, values=df.edit_links,
-                              aggfunc=max, dropna=True, margins=False).fillna('')
-    cap_summary = cap_summary[natural_sort(cap_summary.columns)[::-1]]
-    cap_summary.index.name = None
-    cap_summary.columns.name = None
-
-
     # Summary of cap activity by RSN
     df2 = pd.read_sql(models.Caps.query.order_by(models.Caps.capdate).statement, db.engine)
-    # todo need to sort by date and not id so 'last' pulls the right number
-    cap_activity_pivot = pd.pivot_table(df2, index=["rsn"],
-                                        values=["possible_caps", "cap_count",
-                                                "cap_percentage", "cap_streak", "last_cap"],
+    df2 = df2.rename(columns={"possible_caps":"Possible", "cap_count":"Total", "cap_percentage": "%",
+                        "cap_streak":"Streak", "last_cap":"Last"})
+
+    cap_activity_pivot = pd.pivot_table(df2, index=["rsn"], values=["Possible", "Total", "%", "Streak", "Last"],
                                         aggfunc='last')
 
-    right_order = ["possible_caps", "cap_count", "cap_percentage", "cap_streak", "last_cap"]
-    cap_activity_pivot = cap_activity_pivot.reindex(columns=right_order)
+    cap_activity_pivot = cap_activity_pivot.reindex(columns=["Possible", "Total", "%", "Streak", "Last"])
     cap_activity_pivot.index.name = None
 
     return render_template('caps/viewcaps.html',
-                           cap_summary=cap_summary.to_html(classes='table', escape=False),
-                           cap_activity=cap_activity_pivot.to_html())
-
+                           cap_activity=cap_activity_pivot.to_html(classes='table table-hover table-condensed',
+                                                                   formatters={'%': '{:,.0%}'.format}))
 
 def natural_sort(l):
     import re
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(l, key = alphanum_key)
+
+
+# line = TimeSeries(df.change_to_recruit_count, xlabel='Date', ylabel='Clan Size')
+# line_script, line_div = components(line)

@@ -2,7 +2,7 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="col-md-8">
+<div class="col-md-6">
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <div class="alert alert-info" role="alert">
@@ -18,49 +18,54 @@
 
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Cap Table (click to edit) <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Caps Over Time <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
         </div>
-
         <div class="panel-body">
-            {{ cap_summary|safe }}
+            <div id="chart_browsers" style="width:100%; height:200px;"></div>
         </div>
     </div>
 
 
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Caps <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-bar-chart"></i> Top 10: Cap Percentage <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
         </div>
         <div class="panel-body">
-            {{ cap_activity|safe }}
+
         </div>
     </div>
+
+
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-bar-chart"></i> Top 10: Cap Streak <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
+        </div>
+        <div class="panel-body">
+
+        </div>
+    </div>
+
 </div>
 
 
-<div class="col-md-4">
+<div class="col-md-6">
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Example Chart <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-table"></i> Cap Consistency <a class="pull-right fa fa-question" href="#" style="text-decoration:none;"></a></h3>
         </div>
-                <div class="panel-body">
-                    <div id="chart_browsers" style="width:100%; height:200px;"></div>
+        <div class="panel-body">
+            <div class="table-responsive">
+                {{ cap_activity|safe }}
+            </div>
         </div>
     </div>
+
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Example Chart <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-bar-chart"></i> Cap Percentage Distribution <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
         </div>
-                <div class="panel-body">
-                    <div id="chart_browsers" style="width:100%; height:200px;"></div>
-        </div>
-    </div>
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-keyboard-o"></i> Keywords</h3>
-        </div>
-        <div class="panel-body text-center">
-            <div id="tagcloud"></div>
+        <div class="panel-body">
+            Three bar charts per decile; total, current, former clan members by decile on the x axis and frequency count on the y-axis
         </div>
     </div>
 </div>

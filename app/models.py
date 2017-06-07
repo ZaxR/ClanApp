@@ -214,11 +214,11 @@ class Events(db.Model):
 
 class XP(db.Model):
     __tablename__ = "xp"
-    id = db.Column(db.Integer, primary_key=True)
-    rsn = db.Column(db.String(15), index=True, unique=False)
-    xp = db.Column(db.Integer, index=True, unique=False)
-    # something to capture timestamp of last pull
+    rsn = db.Column("rsn", db.String(15), primary_key=True)
+    xp = db.Column("xp", db.Integer, index=True, unique=False)
+    time_stamp = db.Column("time_stamp", db.DateTime, index=True, unique=False)
 
-    def __init__(self, rsn, xp):
+    def __init__(self, rsn, xp, time_stamp):
         self.rsn = rsn
         self.xp = xp
+        self.time_stamp = time_stamp

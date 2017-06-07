@@ -18,7 +18,7 @@
 
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Recruits <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Recruits <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
         </div>
         <div class="panel-body">
             <table class="table" id="grid">
@@ -38,7 +38,7 @@
                             <td>
                                 <div class="input-group input-append date" id="datePicker">
                                     {{ form.recruit_date(class_="form-control") }}
-                                    <span class="input-group-addon add-on"><span class="glyphicon glyphicon-calendar"></span></span>
+                                    <span class="input-group-addon add-on"><span class="fa fa-calendar"></span></span>
                                 </div>
                             </td>
 
@@ -85,8 +85,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            {{ pagination.links }}
-            {{ pagination.info }}
+            <div class="pagination-bar">
+                {{ pagination.links }}
+                {{ pagination.info }}
+            </div>
         </div>
     </div>
 </div>
@@ -95,26 +97,12 @@
 <div class="col-md-4">
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Example Chart <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-keyboard-o"></i> Instructions/Notes </h3>
         </div>
-                <div class="panel-body">
-                    <div id="chart_browsers" style="width:100%; height:200px;"></div>
-        </div>
-    </div>
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Example Chart <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
-        </div>
-                <div class="panel-body">
-                    <div id="chart_browsers" style="width:100%; height:200px;"></div>
-        </div>
-    </div>
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-keyboard-o"></i> Keywords</h3>
-        </div>
-        <div class="panel-body text-center">
-            <div id="tagcloud"></div>
+        <div class="panel-body">
+            <ul>
+                <li>Coming soon.</li>
+            </ul>
         </div>
     </div>
 </div>

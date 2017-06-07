@@ -18,7 +18,7 @@
 
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> {{ title }} <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-line-chart"></i> {{ title }} <a class="pull-right fa fa-question" href="#" style="text-decoration:none;"></a></h3>
         </div>
 
         <div class="panel-body">
@@ -27,7 +27,7 @@
                     {{ form.csrf_token }}
                     <label class="col-xs-3 control-label">RSN</label>
                     <div class="col-xs-5" name="RSN">
-                            {{ form.rsn(class_="form-control") }}
+                            {{ rsn }}
                     </div>
                 </div>
 
@@ -36,7 +36,7 @@
                     <div class="col-xs-5 date">
                         <div class="input-group input-append date" id="datePicker">
                             {{ form.capdate(class_="form-control") }}
-                            <span class="input-group-addon add-on"><span class="glyphicon glyphicon-calendar"></span></span>
+                            <span class="input-group-addon add-on"><span class="fa fa-calendar"></span></span>
                         </div>
                     </div>
                 </div>

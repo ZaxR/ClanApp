@@ -18,123 +18,49 @@
 
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> {{ title }} <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Cap Table (click to edit) <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a><a class="pull-right fa fa-question" href="#" style="text-decoration:none;"></a></h3>
         </div>
 
         <div class="panel-body">
-            <form method="post" action="{{ url_for(action, cap_id=cap_id) }}" id="eventForm" class="form-horizontal">
-                <div class="form-group">
-                    {{ form.csrf_token }}
-                    <label class="col-xs-3 control-label">RSN</label>
-                    <div class="col-xs-5" name="RSN">
-                            {{ form.rsn(class_="form-control") }}
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="col-xs-3 control-label">Date</label>
-                    <div class="col-xs-5 date">
-                        <div class="input-group input-append date" id="datePicker">
-                            {{ form.capdate(class_="form-control") }}
-                            <span class="input-group-addon add-on"><span class="glyphicon glyphicon-calendar"></span></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="col-xs-3 control-label">Cap Type</label>
-                    <div class="col-xs-5 date">
-                        <div class="input-group input-append date">
-                            {{ form.captype(class_="form-control") }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="col-xs-5 col-xs-offset-3">
-                        <button type="submit" class="btn btn-default"> Update </button>
-                    </div>
-                </div>
-            </form>
-
-        </div>
-    </div>
-
-
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-line-chart"></i> Caps <a class="pull-right glyphicon glyphicon-option-horizontal" href="#" style="text-decoration:none;"></a></h3>
-        </div>
-        <div class="panel-body">
-
             <a href="{{ url_for('caps.add_cap_week') }}" class="btn btn-default btn-lg">
                 <i class="fa fa-plus"></i> Add Week
             </a>
+        </div>
 
-            <table class="table" id="grid">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Week</th>
-                        <th>RSN</th>
-                        <th>Cap Type</th>
-                        <th>Action(s)</th>
-                    <tr>
-                </thead>
-                <tbody>
-                    {% for row in captable %}
-                    <tr>
-                        <td>{{ row.capdate }}</td>
-                        <td>{{ row.week }}</td>
-                        <td>{{ row.rsn }}</td>
-                        <td>{{ row.captype }}</td>
-                        <td>
-                            <a href="{{ url_for('caps.edit_cap', cap_id=row.id) }}">
-                                <i class="fa fa-pencil"></i> Edit
-                            </a>
-]
-                            <a href="{{ url_for('caps.delete_cap', cap_id=row.id) }}">
-                                <i class="fa fa-trash"></i> Delete
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div class="pagination-bar">
-                {{ pagination.links }}
-                {{ pagination.info }}
+        <div class="panel-body">
+            <div class="table-responsive">
+                {{ cap_summary|safe }}
             </div>
         </div>
     </div>
+
 </div>
 
 
 <div class="col-md-4">
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Example Chart <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
+            <h3 class="panel-title"><i class="fa fa-calendar"></i> Date Quick Reference <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
         </div>
-                <div class="panel-body">
-                    <div id="chart_browsers" style="width:100%; height:200px;"></div>
-        </div>
-    </div>
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-pie-chart"></i> Example Chart <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a></h3>
-        </div>
-                <div class="panel-body">
-                    <div id="chart_browsers" style="width:100%; height:200px;"></div>
+        <div class="panel-body">
+            Coming soon.
         </div>
     </div>
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <h3 class="panel-title"><i class="fa fa-keyboard-o"></i> Keywords</h3>
+            <h3 class="panel-title"><i class="fa fa-keyboard-o"></i> Instructions/Notes </h3>
         </div>
-        <div class="panel-body text-center">
-            <div id="tagcloud"></div>
+        <div class="panel-body">
+            <ul>
+                <li>Click on the captype in each cell to edit the cap entry. A form will pop up that allows you to change the captype and the date,
+                    as long as it falls within the selected week.</li>
+                <li>To add a new week for all active clan members, click the "Add week" button and a cap entry with a type of "No"
+                will be added for each account.</li>
+                <li>Caps with a type of "New" are automatically created when a recruit is recorded.</li>
+            </ul>
         </div>
     </div>
+
 </div>
 
 {% endblock %}

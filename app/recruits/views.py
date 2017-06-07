@@ -4,9 +4,9 @@ from datetime import datetime, time
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from flask_paginate import Pagination, get_page_args
-from sqlalchemy import desc
+from sqlalchemy import and_, desc, exists
 
-from bokeh.charts import Bar, Line
+from bokeh.charts import Bar, Line, Step, TimeSeries
 from bokeh.embed import components
 from bokeh.models.formatters import DatetimeTickFormatter
 from bokeh.resources import INLINE
@@ -14,7 +14,10 @@ from bokeh.resources import INLINE
 from app import db, models
 from . import recruits
 from app.recruits.forms import RecruitsForm
-from app.caps.views import capweek
+from app.caps.views import add_cap
+
+
+pd.set_option('display.max_colwidth', -1)
 
 
 @recruits.route('/recruits', methods=['GET', 'POST'])
@@ -22,7 +25,7 @@ from app.caps.views import capweek
 def list_recruits():
     form = RecruitsForm(request.form)
 
-    if request.method == 'POST' and form.validate():
+    if request.method == 'POST':
         return add_recruit(form)
 
     page, per_page, offset = get_page_args()
@@ -39,6 +42,48 @@ def list_recruits():
 
 def add_recruit(form):
     if form.validate():
+        if form.activity.data == 'Join':
+            # Makes sure there isn't already a clan member with the same name (prevents double entry).
+            if db.session.query(exists().where(and_(models.Accounts.in_clan == 'Yes',
+                                                    models.Accounts.rsn == form.recruit.data))).scalar():
+                flash('Someone by that RSN is already in the clan.')
+                return redirect(url_for('recruits.list_recruits'))
+
+            # Make sure the date isn't in the future
+            if form.recruit_date.data > datetime.now().date():
+                flash("That date's in the future. Since I'm pretty sure you're not psychic, please try another date.")
+                return redirect(url_for('recruits.list_recruits'))
+
+            # Adds the recruit to the Accounts list
+            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=form.recruit_date.data)
+            models.db.session.add(new_account)
+
+            # Adds a cap of "New" for the new recruit
+            new_cap = add_cap(form.recruit_date.data, form.recruit.data, "New")
+            models.db.session.add(new_cap)
+        else:
+            # This check will be made redundant when there's a dropdown of current members to select from for leaves
+            if not db.session.query(exists().where(and_(models.Accounts.in_clan == 'Yes',
+                                                        models.Accounts.rsn == form.recruit.data))).scalar():
+                flash('There\'s no one currently in the clan with that RSN.')
+                return redirect(url_for('recruits.list_recruits'))
+
+            # Makes sure the leave date wasn't set before the person even joined the clan.
+            join_date = [date.join_date for date in models.Accounts.query.filter(models.Accounts.rsn == form.recruit.data)]
+            if form.recruit_date.data < join_date[0]:
+                flash("Player was not yet in the clan. Please select a date on or after {join_date}".format(join_date=join_date[0]))
+                return redirect(url_for('recruits.list_recruits'))
+
+            # Make sure the date isn't in the future
+            if form.recruit_date.data > datetime.now().date():
+                flash("That date's in the future. Since I'm pretty sure you're not psychic, please try another date.")
+                return redirect(url_for('recruits.list_recruits'))
+
+            account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
+            account.in_clan = 'No'
+            account.leave_date = form.recruit_date.data
+
+        # Adds the activity to the Recruits table
         new_recruit = models.Recruits(form.recruit_date.data,
                                       form.activity.data,
                                       form.recruiter.data,
@@ -48,17 +93,8 @@ def add_recruit(form):
 
         models.db.session.add(new_recruit)
 
-        if form.activity.data == 'Join':
-            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=form.recruit_date.data)
-            new_cap_record = models.Caps(form.recruit_date.data,
-                                         capweek(form.recruit_date.data), form.recruit.data, "No", 1, 0, 0, 0, None)
-
-            models.db.session.add(new_account)
-            models.db.session.add(new_cap_record)
-        else:
-            account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
-            account.in_clan = 'No'
-            account.leave_date = form.recruit_date.data
+        # Recalculate total recruiting points and add to Accounts.recruit_points
+        # Just need to sum all in Recruits.points for the rsn and multiply by 10
 
         try:
             models.db.session.commit()
@@ -69,7 +105,6 @@ def add_recruit(form):
     else:
         flash('Fill the form completely and properly, dumb-dumb.')
 
-    test = models.Accounts.query
     return redirect(url_for('recruits.list_recruits'))
 
 
@@ -149,7 +184,7 @@ def change_to_recruit_count(type):
 @recruits.route('/viewrecruits', methods=['GET', 'POST'])
 @login_required
 def viewrecruits():
-    df = pd.read_sql(models.Recruits.query.statement, db.engine)
+    df = pd.read_sql(models.Recruits.query.order_by(models.Recruits.recruit_date).statement, db.engine)
 
     # summary of recruiting by recruiter
     df['Total Recruits'] = df.groupby(['recruiter'])['change_to_recruit_count'].apply(lambda x: x == 1)
@@ -164,13 +199,14 @@ def viewrecruits():
     retention_pivot['Retention Rate'] = retention_pivot['Remaining Recruits'] / retention_pivot['Total Recruits']
     right_order = ["Total Recruits", "Recruits Worth Points", "Remaining Recruits", "Retention Rate"]
     retention_pivot = retention_pivot.reindex(columns=right_order)
+    retention_pivot.index.name = None
 
     # count by recruiter by day
     count_by_recruiter = pd.crosstab(index=df.recruit_date, columns=df.recruiter, values=df.change_to_recruit_count,
                                      aggfunc=sum, dropna=True, margins=False).fillna('')
 
     # cummulative count by recruiter over time; use for stacked bar chart
-    df['cumulative'] = df.groupby(['recruiter'])['change_to_recruit_count'].cumsum()  # apply(lambda x: x.cumsum())
+    df['cumulative'] = df.groupby(['recruiter'])['change_to_recruit_count'].cumsum()
     cumsum_by_recruiter = pd.pivot_table(df, index="recruit_date", columns='recruiter', values='cumulative',
                                          aggfunc=sum, dropna=True, margins=False).fillna(method='pad').fillna('')
 
@@ -187,8 +223,8 @@ def viewrecruits():
               label='recruit_date', values='value', stack='recruiter', agg='sum',
               responsive=True,
               tools='', tooltips=tooltips, toolbar_location=None,
-              xlabel="datetime", ylabel="Clan Size",
-              legend='top_right')
+              xlabel="Date", ylabel="Clan Size",
+              legend='top_left')
 
     # bar.xaxis.formatter = DatetimeTickFormatter(months=["%m"], days=["%d"], years=["%Y"])
 
@@ -196,13 +232,14 @@ def viewrecruits():
     css_resources = INLINE.render_css()
 
     # Generate the script and HTML for the plot
-    script, div = components(bar)
+    bar_script, bar_div = components(bar)
 
     return render_template('recruits/viewrecruits.html',
-                           retention=retention_pivot.to_html(formatters={'Retention Rate': '{:,.0%}'.format}),
+                           retention=retention_pivot.to_html(classes='table table-hover table-condensed',
+                                                             formatters={'Retention Rate': '{:,.0%}'.format}),
                            count=count_by_recruiter.to_html(),
                            cumsum=cumsum_by_recruiter.to_html(),
-                           plot_script=script,
-                           plot_div=div,
+                           bar_script=bar_script,
+                           bar_div=bar_div,
                            js_resources=js_resources,
                            css_resources=css_resources)

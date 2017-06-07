@@ -8,7 +8,8 @@ from app import models
 class RecruitsForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(RecruitsForm, self).__init__(*args, **kwargs)
-        self.recruiter.choices = [(account.rsn, account.rsn) for account in models.Accounts.query]
+        self.recruiter.choices = [(account.rsn, account.rsn) for account in
+                                  models.Accounts.query.filter(models.Accounts.in_clan == 'Yes')]
         self.recruiter.choices.extend([('***Unknown***', '***Unknown***'),
                                        ("***Alts***", "***Alts***"), ("***Founder***", "***Founder***")])
         self.recruiter.choices.sort(key=lambda t: tuple(t[0].lower()))
