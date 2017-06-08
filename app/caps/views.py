@@ -17,7 +17,7 @@ pd.set_option('display.max_colwidth', -1)
 def list_caps():
     # Creates cap table view similar to Google Sheets version
     df = pd.read_sql(models.Caps.query.statement, db.engine)
-    df['edit_links'] = df.apply(lambda row: '<a href="http://localhost:4000/caps/edit/{0}">'
+    df['edit_links'] = df.apply(lambda row: '<a href="/caps/edit/{0}">'
                                             '{1} <i class="fa fa-pencil"></i></a>'.
                                             format(row['id'], row['captype']), axis=1)
 
