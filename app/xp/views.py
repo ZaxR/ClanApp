@@ -29,12 +29,14 @@ def xp():
         print('Was an issue. Pulling old numbers from query instead')
         xp_df = pd.read_sql(models.XP.query.order_by(models.XP.rsn).statement, db.engine)
 
-    # Adds the activity to the Recruits table
-    for record in [rsn for rsn in models.Accounts.query.filter(models.Accounts.in_clan == 'Yes').all()]:
-        match = models.XP.query.filter(models.XP.rsn.ilike(record.rsn.replace(" ", "_")+"%")).first()
-        record.xp_points = match.xp
-        record.rank = match.rank
-        models.db.session.commit()
+    # # Adds the activity to the Recruits table
+    for record in [rsn for rsn in models.XP.query.all()]:
+        match = models.Accounts.query.filter(models.Accounts.rsn.ilike(record.rsn.replace(" ", "_") + "%")).first()
+        if match is not None:
+            match.xp_points = record.xp
+            match.rank = record.rank
+            models.db.session.commit()
+
 
     return render_template('xp/xp.html', action="xp.xp",
                            xp_table=xp_df.to_html(classes='table table-hover table-condensed'))
