@@ -1,0 +1,52 @@
+<!-- extend base layuot -->
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="col-md-8">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <ul class = flashes>
+                    {% for message in messages %}
+                        {{message}}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-line-chart"></i> XP Table <a class="pull-right fa fa-gear" href="#" style="text-decoration:none;"></a><a class="pull-right fa fa-question" href="#" style="text-decoration:none;"></a></h3>
+        </div>
+
+        <div class="panel-body">
+            <div class="table-responsive">
+                {{ xp_table|safe }}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="col-md-4">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title"><i class="fa fa-keyboard-o"></i> Instructions/Notes </h3>
+        </div>
+        <div class="panel-body">
+            <ul>
+                <li>Coming soon.</li>
+                <li>Add timestamp column to data</li>
+                <li>Try to get updated results, except use latest data</li>
+
+                <li>Allow clan name to be set in admin settings, so url isn't hardcoded for pull</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
