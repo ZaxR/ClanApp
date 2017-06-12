@@ -94,7 +94,7 @@ class Players(db.Model):
 class Accounts(db.Model):
     __tablename__ = "accounts"
     id = db.Column(db.Integer, primary_key=True)
-    rsn = db.Column(db.String(15), index=True, unique=False)
+    rsn = db.Column(db.String(15), index=True, unique=True)
     in_clan = db.Column(db.String(3), index=True, unique=False)
     version = db.Column(db.String(15), index=True, unique=False)
     rank = db.Column(db.String(15), index=True, unique=False)
@@ -175,7 +175,7 @@ class Caps(db.Model):
 
 class Recruits(db.Model):
     __tablename__ = "recruits"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
     recruit_date = db.Column(db.Date, index=True, unique=False)
     activity_type = db.Column(db.String(15), index=True, unique=False)
     recruiter = db.Column(db.String(15), index=True, unique=False)
@@ -195,7 +195,6 @@ class Recruits(db.Model):
 class Events(db.Model):
     __tablename__ = "events"
     id = db.Column(db.Integer, primary_key=True)
-
     event_date = db.Column(db.Date, index=True, unique=False)
     host = db.Column(db.String(15), index=True, unique=False)
     activity_type = db.Column(db.String(15), index=True, unique=False)
@@ -216,6 +215,7 @@ class XP(db.Model):
     __tablename__ = "xp"
     rsn = db.Column("rsn", db.String(15), primary_key=True)
     xp = db.Column("xp", db.Integer, index=True, unique=False)
+    rank = db.Column("rank", db.String(15), index=True, unique=False)
     time_stamp = db.Column("time_stamp", db.DateTime, index=True, unique=False)
 
     def __init__(self, rsn, xp, time_stamp):

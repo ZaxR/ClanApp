@@ -1,8 +1,8 @@
 from flask import Flask, flash, redirect, request, url_for
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -23,6 +23,7 @@ login_manager.login_view = "login"
 migrate = Migrate(app, db)
 
 from app import views, models
+
 models.db.create_all()
 
 
@@ -47,6 +48,9 @@ app.register_blueprint(caps_blueprint)
 
 from .events import events as events_blueprint
 app.register_blueprint(events_blueprint)
+
+from .members import members as members_blueprint
+app.register_blueprint(members_blueprint)
 
 from .recruits import recruits as recruits_blueprint
 app.register_blueprint(recruits_blueprint)

@@ -1,9 +1,10 @@
-from flask import flash, jsonify, redirect, render_template, request, session, url_for, abort
-from flask_login import logout_user, login_required, login_manager, login_user
-from app import models
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import logout_user, login_required, login_user
 
-from . import auth
+from app import models
 from app.auth.forms import LoginForm
+from . import auth
+
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():  # todo known issues: needs flask.abort and 400 page for improper redirect attempts; werkzeug.exceptions.abort?

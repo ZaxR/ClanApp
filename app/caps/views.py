@@ -1,13 +1,13 @@
-import pandas as pd
 from datetime import datetime
+
+import pandas as pd
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
-from sqlalchemy import desc, exists
+from sqlalchemy import desc
 
 from app import db, models
-from . import caps
 from app.caps.forms import CapsForm
-
+from . import caps
 
 pd.set_option('display.max_colwidth', -1)
 
@@ -18,7 +18,7 @@ def list_caps():
     # Creates cap table view similar to Google Sheets version
     df = pd.read_sql(models.Caps.query.statement, db.engine)
     df['edit_links'] = df.apply(lambda row: '<a href="/caps/edit/{0}">'
-                                            '{1} <i class="fa fa-pencil"></i></a>'.
+                                            '{1}<i class="fa fa-pencil"></i></a>'.
                                             format(row['id'], row['captype']), axis=1)
 
     cap_summary = pd.crosstab(index=df.rsn, columns=df.week, values=df.edit_links,
@@ -28,7 +28,7 @@ def list_caps():
     cap_summary.columns.name = None
 
     return render_template('caps/caps.html', action="caps.list_caps",
-                           cap_summary=cap_summary.to_html(classes='table table-hover table-condensed', escape=False))
+                           cap_summary=cap_summary.to_html(classes='table table-hover table-condensed table-fixed', escape=False))
 
 
 @caps.route('/caps/edit/<int:cap_id>', methods=['GET', 'POST'])
@@ -61,7 +61,7 @@ def edit_cap(cap_id):
 
             earlier_date = min(previous_capdate, cap.capdate)
 
-            # Updates current cap and all future caps based on the cap's unchanged/new date
+            # Updates current cap and all caps after that date based on the earlier of the previous/new date
             entries = [cap for cap in models.Caps.query.filter_by(rsn=cap.name).
                        filter(models.Caps.capdate >= earlier_date).order_by(models.Caps.capdate)]
 
@@ -72,11 +72,16 @@ def edit_cap(cap_id):
                 entry.cap_streak = cap_streak(entry.rsn, entry.capdate, entry.captype, "Edit")
                 entry.last_cap = last_cap(entry.rsn, entry.capdate, entry.captype, "Edit")
 
-                # previous_captype = entry.captype  # assumes going in order from past to present
-
             try:
                 db.session.add(cap)
                 db.session.commit()
+
+                # Update caps for rank sheet
+                q = models.Caps.query.filter_by(rsn=cap.rsn).order_by(desc(models.Caps.capdate)).first()
+                a = models.Accounts.query.filter(models.Accounts.rsn == cap.rsn).first()
+                a.cap_points = q.cap_count
+                db.session.commit()
+
                 flash('You have successfully edited the cap.')
             except:
                 flash('Something went wrong. Please try again.')

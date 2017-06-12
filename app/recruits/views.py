@@ -1,21 +1,19 @@
-import numpy as np
+from datetime import datetime
+
 import pandas as pd
-from datetime import datetime, time
+from bokeh.charts import Bar
+from bokeh.embed import components
+from bokeh.resources import INLINE
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from flask_paginate import Pagination, get_page_args
 from sqlalchemy import and_, desc, exists
-
-from bokeh.charts import Bar, Line, Step, TimeSeries
-from bokeh.embed import components
-from bokeh.models.formatters import DatetimeTickFormatter
-from bokeh.resources import INLINE
+from sqlalchemy.sql import func
 
 from app import db, models
-from . import recruits
-from app.recruits.forms import RecruitsForm
 from app.caps.views import add_cap
-
+from app.recruits.forms import RecruitsForm
+from . import recruits
 
 pd.set_option('display.max_colwidth', -1)
 
@@ -54,9 +52,13 @@ def add_recruit(form):
                 flash("That date's in the future. Since I'm pretty sure you're not psychic, please try another date.")
                 return redirect(url_for('recruits.list_recruits'))
 
-            # Adds the recruit to the Accounts list
-            new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=form.recruit_date.data)
-            models.db.session.add(new_account)
+            # Adds the recruit to the Accounts list, if they're not rejoining
+            if models.Accounts.query.filter(models.Accounts.rsn.ilike(form.recruit.data.replace(" ", "_") + "%")):
+                account = models.Accounts.query.filter_by(rsn=form.recruit.data).first()
+                account.in_clan = 'Yes'
+            else:
+                new_account = models.Accounts(rsn=form.recruit.data, in_clan='Yes', join_date=form.recruit_date.data)
+                models.db.session.add(new_account)
 
             # Adds a cap of "New" for the new recruit
             new_cap = add_cap(form.recruit_date.data, form.recruit.data, "New")
@@ -69,7 +71,8 @@ def add_recruit(form):
                 return redirect(url_for('recruits.list_recruits'))
 
             # Makes sure the leave date wasn't set before the person even joined the clan.
-            join_date = [date.join_date for date in models.Accounts.query.filter(models.Accounts.rsn == form.recruit.data)]
+            join_date = [date.join_date for date in models.Accounts.query.filter(
+                models.Accounts.rsn == form.recruit.data)]
             if form.recruit_date.data < join_date[0]:
                 flash("Player was not yet in the clan. Please select a date on or after {join_date}".format(join_date=join_date[0]))
                 return redirect(url_for('recruits.list_recruits'))
@@ -102,6 +105,13 @@ def add_recruit(form):
         except:
             flash('Something went wrong. Please try again.')
 
+        # Update recruits for rank sheet
+        a = models.Accounts.query.filter(models.Accounts.rsn == form.recruiter.data).first()
+        a.recruit_points = models.Recruits.query.\
+            filter_by(recruiter=form.recruiter.data).\
+            with_entities(func.sum(models.Recruits.points)).all()[0][0]
+        db.session.commit()
+
     else:
         flash('Fill the form completely and properly, dumb-dumb.')
 
@@ -111,7 +121,6 @@ def add_recruit(form):
 @recruits.route('/recruits/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_recruit(id):
-    print(id, type(id))
     recruit = models.Recruits.query.get_or_404(id)
     form = RecruitsForm(obj=recruit)
 
@@ -141,6 +150,13 @@ def edit_recruit(id):
                 flash('You have successfully edited the recruiting entry.')
             except:
                 flash('Something went wrong. Please try again.')
+
+            # Update recruits for rank sheet
+            a = models.Accounts.query.filter(models.Accounts.rsn == form.recruiter.data).first()
+            a.recruit_points = models.Recruits.query. \
+                filter_by(recruiter=form.recruiter.data). \
+                with_entities(func.sum(models.Recruits.points)).all()[0][0]
+            db.session.commit()
 
         else:
             flash('Fill the form completely and properly, dumb-dumb.')

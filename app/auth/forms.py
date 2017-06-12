@@ -1,8 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import Form, BooleanField, DateField, IntegerField, SelectField, StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, EqualTo
-from wtforms.ext.sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
-from app import models
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired
 
 
 class LoginForm(FlaskForm):

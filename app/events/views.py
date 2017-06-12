@@ -1,13 +1,12 @@
-import numpy as np
-import pandas as pd
 from datetime import datetime
+
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy import desc
 
-from app import db, models
-from . import events
+from app import models
 from app.events.forms import EventsForm
+from . import events
 
 
 @events.route('/addevents', methods=['GET', 'POST'])

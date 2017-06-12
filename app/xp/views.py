@@ -1,14 +1,15 @@
-from io import StringIO
 from datetime import datetime
-from flask import flash, redirect, render_template, request, url_for
-from flask_login import login_required
+from io import StringIO, BytesIO
+
 import pandas as pd
+import re
+from flask import render_template
+from flask_login import login_required
 from requests import get
-from sqlalchemy import desc, exists
-from sqlalchemy.orm import mapper
 
 from app import db, models
 from . import xp
+from app.caps.views import natural_sort
 
 
 @xp.route('/xp', methods=['GET', 'POST'])
@@ -16,22 +17,27 @@ from . import xp
 def xp():
     try:
         r = get("http://services.runescape.com/m=clan-hiscores/members_lite.ws?clanId=374374&ranking=1&pageSize=500")
-        pull = pd.read_csv(StringIO(r.text), sep=",")
+        pull = pd.read_csv(StringIO(r.text), sep=",")   # r.text.encode('utf-8')
+
         pull.columns = ['rsn', 'Rank', 'xp', 'Kills']
-        xp = pull[['rsn', 'xp']]
-        xp['xp'] = xp['xp'].apply(lambda x: num_format(x))  # xp['XP'] = xp.loc[1:,['XP']].apply(lambda x: num_format(x))
-        xp['time_stamp'] = [datetime.now() for _ in xp['xp']]  # xp.loc[:,['XP']]]
-        xp.to_sql(name='xp', con=db.engine, if_exists='replace', index=False)
-        # todo use db.session.merge(xp) or other upsert instead of replace to keep former clannie xp
-        # would allow to see name changes based on xp of old and new being ==
-        # would allow keeping historic xp for players no longer in clan without writing to Account xp_pts
+        xp_df = pull[['rsn', 'xp', 'Rank']]
+        #xp['xp'] = xp['xp'].apply(lambda x: num_format(int(x)))  # xp['XP'] = xp.loc[1:,['XP']].apply(lambda x: num_format(x))
+        xp_df['time_stamp'] = [datetime.now() for _ in xp_df['xp']]  # xp.loc[:,['XP']]]
+        xp_df.to_sql(name='xp', con=db.engine, if_exists='replace')  # , index=False
+
     except:
         print('Was an issue. Pulling old numbers from query instead')
-        xp = pd.read_sql(models.XP.query.order_by(models.XP.rsn).statement, db.engine)
+        xp_df = pd.read_sql(models.XP.query.order_by(models.XP.rsn).statement, db.engine)
 
+    # Adds the activity to the Recruits table
+    for record in [rsn for rsn in models.Accounts.query.filter(models.Accounts.in_clan == 'Yes').all()]:
+        match = models.XP.query.filter(models.XP.rsn.ilike(record.rsn.replace(" ", "_")+"%")).first()
+        record.xp_points = match.xp
+        record.rank = match.rank
+        models.db.session.commit()
 
     return render_template('xp/xp.html', action="xp.xp",
-                           xp_table=xp.to_html(classes='table table-hover table-condensed'))
+                           xp_table=xp_df.to_html(classes='table table-hover table-condensed'))
 
 def num_format(num):
     magnitude = 0
